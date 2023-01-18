@@ -12,7 +12,6 @@ refseq <- Biostrings::readDNAStringSet("../exported-feature-table/dna-sequences.
 dat <- read.table("../../metadata.txt", header = TRUE,row.names = 1, sep = "\t")
 # Merge into one complete phyloseq object
 all <- merge_phyloseq(raw, sample_data(dat), tree, refseq)
-
 tax <- data.frame(tax_table(all), stringsAsFactors = FALSE)
 tax <- tax[,1:7] # No info in col 8-15
 
