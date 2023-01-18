@@ -21,6 +21,7 @@ colnames(tax) <- c("Kingdom", "Phylum","Class","Order","Family","Genus", "Specie
 library(stringr)
 # - Remove all "D_#__"
 tax.clean <- data.frame(row.names = row.names(tax),
+                        
                         Kingdom = str_replace(tax[,1], "d__",""), 
                         Phylum = str_replace(tax[,2], "p__",""),
                         Class = str_replace(tax[,3], "c__",""),
@@ -75,7 +76,7 @@ tax.clean[tax.clean$Species %in% bad,6:7] <- ""
 #tax.clean[grepl("uncultured", tax.clean$Species),"Species"] <- ""
 #tax.clean[grepl("unidentified", tax.clean$Species),"Species"] <- ""
 
-#### Remove remove ".", change "-" and " " to "_"
+# Remove remove ".", change "-" and " " to "_"
 for (i in 1:ncol(tax.clean)){
   tax.clean[,i] <- str_replace_all(tax.clean[,i], "[.]","")
   tax.clean[,i] <- str_replace_all(tax.clean[,i], "[(]","")
