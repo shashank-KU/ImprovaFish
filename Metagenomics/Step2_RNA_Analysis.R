@@ -20,6 +20,9 @@ library("dendextend")
 library("WGCNA")
 library("metagenomeSeq")
 library("decontam")
+library("RColorBrewer")
+library("ampvis2")
+
 
 # Load data
 raw <- import_biom("../exported-feature-table/feature-table_taxonomy.biom")
@@ -582,7 +585,6 @@ heat.sample <- plot_taxa_heatmap(psdata.r,
 
 
 
-library(ampvis2)
 
 ampvis2_obj <- phyloseq_to_ampvis2(psdata.r)
 
@@ -602,11 +604,6 @@ amp_heatmap(ampvis2_obj,
 
 
 # Differential abundance analysis
-library(RColorBrewer)
-library(ggplot2)
-library(phyloseq)
-library(tidyr)
-
 rabuplot(phylo_ob = psdata.r, predictor= "New_Diet", type = "Phylum", facet_wrap   ="samplingTime")
 sample_data(psdata.r)$merged <- paste(sample_data(psdata.r)$New_Diet,"-",sample_data(psdata.r)$samplingTime)
 rabuplot(phylo_ob = psdata.r, predictor= "merged", type = "Phylum", N_taxa= 20 )

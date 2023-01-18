@@ -1,0 +1,43 @@
+---
+title: "Step2_RNA_Analysis"
+author: "Shashank Gupta"
+date: "2023-01-18"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load all the packages used in the analysis
+```{r message=FALSE, warning=FALSE}
+library("ranacapa")
+library("phyloseq")
+library("ggplot2")
+library("stringr")
+library("plyr")
+library("reshape2")
+library("reshape")
+library("dplyr")
+library("tidyr")
+library("doBy")
+library("plyr")
+library("microbiome")
+library("ggpubr")
+library("vegan")
+library("tidyverse")
+library("magrittr")
+library("cowplot")
+library("dendextend")
+library("WGCNA")
+library("metagenomeSeq")
+library("decontam")
+library("RColorBrewer")
+library("ampvis2")
+```
+
+
+```{r}
+
+```
+
