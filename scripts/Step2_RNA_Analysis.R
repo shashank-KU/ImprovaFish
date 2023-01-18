@@ -547,8 +547,6 @@ plot_grid(p5, p6, ncol = 2, rel_widths = c(1.5, 1))
 
 #Adonis
 library(vegan)
-
-
 sampledf <- data.frame(sample_data(psdata.r))
 bcdist <- phyloseq::distance(psdata.r, method="bray",normalized=TRUE) 
 adonis2(bcdist ~ samplingTime, 
