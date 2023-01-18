@@ -1,9 +1,25 @@
 # Libraries
-library(phyloseq)
-library(plyr)
-library(ggplot2)
-library(reshape2)
-library(ranacapa)
+library("ranacapa")
+library("phyloseq")
+library("ggplot2")
+library("stringr")
+library("plyr")
+library("reshape2")
+library("reshape")
+library("dplyr")
+library("tidyr")
+library("doBy")
+library("plyr")
+library("microbiome")
+library("ggpubr")
+library("vegan")
+library("tidyverse")
+library("magrittr")
+library("cowplot")
+library("dendextend")
+library("WGCNA")
+library("metagenomeSeq")
+library("decontam")
 
 # Load data
 raw <- import_biom("../exported-feature-table/feature-table_taxonomy.biom")
@@ -17,9 +33,7 @@ tax <- tax[,1:7] # No info in col 8-15
 # Set informative colnames
 colnames(tax) <- c("Kingdom", "Phylum","Class","Order","Family","Genus", "Species")
 library(stringr)
-# - Remove all "D_#__"
 tax.clean <- data.frame(row.names = row.names(tax),
-                        
                         Kingdom = str_replace(tax[,1], "d__",""), 
                         Phylum = str_replace(tax[,2], "p__",""),
                         Class = str_replace(tax[,3], "c__",""),
@@ -33,14 +47,14 @@ tax.clean[is.na(tax.clean)] <- ""
 # Kingdom - Remove the unassigned completely
 # Phylum
 table(tax.clean$Phylum)
-# ####Class
+# Class
 table(tax.clean$Class)
 # Remove extra info about origin from some bacteria
 # Remove all fields that contain "uncultured", "Unknown" or "Ambigious"
 bad <- c("Ambiguous_taxa","uncultured", "Subgroup_21")
 tax.clean[tax.clean$Class %in% bad,3:7] <- ""
 
-##### Order
+# Order
 table(tax.clean$Order)
 
 bad <- c("0319-6G20","1-20","11-24", "ADurb.Bin180","D8A-2", "Group_1.1c", "JGI_0000069-P22","Marine_Group_II",
@@ -49,24 +63,19 @@ bad <- c("0319-6G20","1-20","11-24", "ADurb.Bin180","D8A-2", "Group_1.1c", "JGI_
          "Subgroup_17", "SAR86_clade", "SAR11_clade", "SAR202_clade", "Chloroplast")
 tax.clean[tax.clean$Order %in% bad,4:7] <- ""
 
-
-
-### Family
+# Family
 table(tax.clean$Family)
-
 bad <- c("Ambiguous_taxa","11-24","67-14", "uncultured", "SAR116_clade", "Run-SP154", 
          "Marine_Group_II", "env.OPS_17", "SAR116_clade", "S085", "S-70", "NS9_marine_group", "Mitochondria")
 tax.clean[tax.clean$Family %in% bad,5:7] <- ""
 
-### Genus
+# Genus
 table(tax.clean$Genus)
-
 bad <- c("Ambiguous_taxa","Unknown_Family","uncultured","Subgroup_10", "1174-901-12", "67-14")
 tax.clean[tax.clean$Genus %in% bad,6:7] <- ""
 
-### Species
+# Species
 table(tax.clean$Species)
-
 bad <- c("Ambiguous_taxa","marine_metagenome","low_GC","wastewater_metagenome","unidentified", 
          "uncultured_synthetic", "uncultured_organism")
 tax.clean[tax.clean$Species %in% bad,6:7] <- ""
@@ -84,7 +93,7 @@ for (i in 1:ncol(tax.clean)){
 }
 
 for (i in 1:7){ tax.clean[,i] <- as.character(tax.clean[,i])}
-####### Fille holes in the tax table
+# File holes in the tax table
 for (i in 1:nrow(tax.clean)){
   #  Fill in missing taxonomy
   if (tax.clean[i,2] == ""){
@@ -111,14 +120,10 @@ rm(bad, class, family, i, kingdom,new,order,phylum,uncul)
 
 tax_table(all) <- as.matrix(tax.clean)
 all
-
-
 #Remove Unnassigned
-
 #all.clean <- subset_taxa(all, Kingdom != "Archaea")
 #all.clean <- subset_taxa(all.clean, Kingdom != "Eukaryota")
 all.clean <- subset_taxa(all, Kingdom != "Unassigned")
-
 all.clean <- prune_taxa(taxa_sums(all.clean) > 0, all.clean)
 all.clean
 
@@ -126,17 +131,7 @@ all.clean
 p <- ggrare(all.clean, step = 1000, color = "New_Diet", label = "samplingTime", se = FALSE)
 p + facet_wrap(~New_Diet)+ theme_bw()
 
-
-
-
-##################################################################
-##################################################################
 # Supplementary figures
-library(phyloseq)
-library(plyr)
-library(ggplot2)
-library(reshape2)
-
 # Enter variables for calculating rarefaction curves
 psdata <- all.clean  # The phyloseq object containing the data
 measures <- c("Observed", "Shannon") #Which measures should the rarefaction curves be calculated for (phyloseq naming)
@@ -192,11 +187,6 @@ cols  <- c(brewer.pal(8,"Set1"), brewer.pal(7,"Dark2"),brewer.pal(7,"Set2"),brew
 p <- p + theme_bw() +   scale_fill_manual(values =cols) + scale_colour_manual( values = cols)
 p
 
-
-
-
-
-
 #Raw data Observed richness
 library(ggpubr)
 shannon.div <- estimate_richness(all.clean, measures = c("Shannon", "Simpson", "Observed","Chao1"))
@@ -250,29 +240,22 @@ PCoA_wunifrac_plot<- plot_ordination(
   xlab("PCoA 1 [68.2 %]") + ylab("PCoA 2 [8.3 %]") + stat_ellipse()+   scale_fill_manual(values =cols) + scale_colour_manual( values = cols)
 
 PCoA_wunifrac_plot
-library(cowplot)
 bottom_row <- plot_grid(p1, PCoA_bray_plot, labels = c('B', 'C'), align = 'h', rel_widths = c(1, 1.3))
 plot_grid(p, bottom_row, labels = c('A', ''), ncol = 1, rel_heights = c(1, 1.2))
 
-library(vegan)
 sampledf <- data.frame(sample_data(all.clean))
 bcdist <- phyloseq::distance(all.clean, method="bray",normalized=TRUE) 
 adonis2(bcdist ~ New_Diet, 
         data = sampledf, permutations = 9999)
 
 
-
-
-
 #Contamination removal
-library(decontam)
 df <- as.data.frame(sample_data(all.clean)) # Put sample_data into a ggplot-friendly data.frame
 df$Sample_or_Control <- ifelse( df$New_Diet  %in% c("ext-ctrl"), "Control_Sample", "True_Sample")
 sample_data(all.clean) <- df
 df$LibrarySize <- sample_sums(all.clean)
 df <- df[order(df$LibrarySize),]
 df$Index <- seq(nrow(df))
-
 ggplot(data=df, aes(x=Index, y=LibrarySize, color=Sample_or_Control)) + geom_point() + theme_bw()
 
 # Identify Contaminants - Prevalence
@@ -284,11 +267,8 @@ head(which(contamdf.prev$contaminant))
 #more aggressive classification threshold rather than the default. i.e., 0.05
 contamdf.prev05 <- isContaminant(all.clean, method="prevalence", neg="is.neg", threshold=0.5)
 table(contamdf.prev05$contaminant)
-
 all.noncontam <- prune_taxa(!contamdf.prev05$contaminant, all.clean)
 all.noncontam
-
-
 
 
 set.seed(1)
@@ -338,7 +318,7 @@ psdata.p <- prune_taxa(taxa_sums(psdata.p) >0, psdata.p)
 psdata.p
 
 # Rarefy the samples using the function multiple_rarefy
-#psdata.r <- multiple_rarefy(psdata.p)
+psdata.r <- multiple_rarefy(psdata.p)
 #psdata.r = rarefy_even_depth(psdata.p, rngseed=1, sample.size=0.9*min(sample_sums(psdata.p)), replace=F)
 #psdata.r = rarefy_even_depth(psdata.p)
 psdata.r<- transform_sample_counts(psdata.p, function(x) x / sum(x) )
@@ -352,20 +332,6 @@ rm(all.noncontam)
 ggrare(psdata.p, step = 1000, color = "New_Diet", label = "samplingTime", se = FALSE)+ facet_wrap(~New_Diet)+ theme_bw()
 
 #### 
-library("phyloseq")
-library("ggplot2")
-library("stringr")
-library("plyr")
-library("reshape2")
-library(reshape)
-library(dplyr)
-library(tidyr)
-library(doBy)
-library(plyr)
-library(microbiome)
-library(ggpubr)
-
-
 # Remove Time point T0
 psdata.r <- subset_samples(psdata.r, samplingTime != "T0")
 psdata.r <- prune_taxa(taxa_sums(psdata.r) > 0, psdata.r)
@@ -660,16 +626,6 @@ A3 <-rabuplot(phylo_ob = ps1, predictor= "New_Diet", type = "Phylum",facet_wrap 
 cowplot::plot_grid(A1, A2, A3, ncol = 3, rel_widths = c(1,1,  1.3))
 
 
-
-
-
-###################################################################################################################################################################
-###################################################################################################################################################################
-###################################################################################################################################################################
-###################################################################################################################################################################
-###################################################################################################################################################################
-#################################################################################################################################################################
-###################################################################################################################################################################
 ###################################################################################################################################################################
 #host-microbiome interactions
 # Set seed as a precaution for reproducibility as some methods are non-deterministic.
@@ -704,18 +660,6 @@ psdata.p
 
 # Rarefy the samples using the function multiple_rarefy
 #psdata.r <- multiple_rarefy(psdata.p)
-library(vegan)
-library(tidyverse)
-library(dendextend)
-library(magrittr)                  # For pipes %>% 
-library(cowplot)                   # For combining plots
-library(dendextend)                # Modify dendrograms
-library(WGCNA)                     # Weighted gene co-expression network analysis
-library(dplyr)                     # Manipulation of data frames
-library(ggplot2)
-library(phyloseq)
-library(metagenomeSeq)
-
 theme_set(theme_classic())
 theme_update(plot.title = element_text(hjust = 0.5))
 theme_update(plot.title = element_text(face="bold"))
