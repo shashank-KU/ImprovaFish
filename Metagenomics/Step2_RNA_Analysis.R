@@ -6,15 +6,14 @@ library(reshape2)
 library(ranacapa)
 
 # Load data
-raw <- import_biom("../../exported-feature-table/feature-table_taxonomy.biom")
-tree <- read_tree("../../exported-feature-table/tree.nwk")
+raw <- import_biom("../exported-feature-table/feature-table_taxonomy.biom")
+tree <- read_tree("../exported-feature-table/tree.nwk")
 refseq <- Biostrings::readDNAStringSet("../exported-feature-table/dna-sequences.fasta", use.names = TRUE)
-dat <- read.table("../../metadata.txt", header = TRUE,row.names = 1, sep = "\t")
+dat <- read.table("../metadata.txt", header = TRUE,row.names = 1, sep = "\t")
 # Merge into one complete phyloseq object
 all <- merge_phyloseq(raw, sample_data(dat), tree, refseq)
 tax <- data.frame(tax_table(all), stringsAsFactors = FALSE)
 tax <- tax[,1:7] # No info in col 8-15
-
 # Set informative colnames
 colnames(tax) <- c("Kingdom", "Phylum","Class","Order","Family","Genus", "Species")
 library(stringr)
