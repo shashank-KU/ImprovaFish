@@ -25,10 +25,10 @@ library("ampvis2")
 
 
 # Load data
-raw <- import_biom("../exported-feature-table/feature-table_taxonomy.biom")
-tree <- read_tree("../exported-feature-table/tree.nwk")
-refseq <- Biostrings::readDNAStringSet("../exported-feature-table/dna-sequences.fasta", use.names = TRUE)
-dat <- read.table("../metadata.txt", header = TRUE,row.names = 1, sep = "\t")
+raw <- import_biom("/Users/shashankgupta/Desktop/ImprovAFish/exported-feature-table/feature-table_taxonomy.biom")
+tree <- read_tree("/Users/shashankgupta/Desktop/ImprovAFish/exported-feature-table/tree.nwk")
+refseq <- Biostrings::readDNAStringSet("/Users/shashankgupta/Desktop/ImprovAFish/exported-feature-table/dna-sequences.fasta", use.names = TRUE)
+dat <- read.table("/Users/shashankgupta/Desktop/ImprovAFish/metadata.txt", header = TRUE,row.names = 1, sep = "\t")
 # Merge into one complete phyloseq object
 all <- merge_phyloseq(raw, sample_data(dat), tree, refseq)
 tax <- data.frame(tax_table(all), stringsAsFactors = FALSE)
@@ -1104,36 +1104,42 @@ library(microbial)
 
 #T1
 phy_MC1<-subset_samples(psdata, samplingTime %in% c("T1") & New_Diet %in% c("CTR", "MC1"))
-MC1 <- prune_taxa(taxa_sums(phy_MC1) >0, phy_MC1)
+phy_MC1 <- prune_taxa(taxa_sums(phy_MC1) >0, phy_MC1)
 table(sample_data(phy_MC1)$New_Diet)
 
 
-lef_out<-run_lefse(MC1, group = "New_Diet", taxa_rank = "Genus", transform = "log10",
+lef_out1<-run_lefse(phy_MC1, group = "New_Diet", taxa_rank = "Genus", transform = "log10",
                    kw_cutoff = 0.05, lda_cutoff = 2, strict = "2")
 
-plot_ef_bar(lef_out)
-plot_abundance(lef_out, group = "New_Diet")
+#plot_ef_bar(lef_out)
+
+a1 <- plot_abundance(lef_out1, group = "New_Diet")
 table(marker_table(lef_out)$enrich_group)
-rabuplot(phy_MC1, predictor= "New_Diet",N_taxa = 25)
+#rabuplot(phy_MC1, predictor= "New_Diet",N_taxa = 25)
+
+#marker_1 <- microbiomeMarker::abundances(lef_out1)
 
 
 phy_MC2<-subset_samples(psdata, samplingTime %in% c("T1") & New_Diet %in% c("CTR", "MC2"))
-MC2 <- prune_taxa(taxa_sums(phy_MC2) >0, phy_MC2)
+phy_MC2 <- prune_taxa(taxa_sums(phy_MC2) >0, phy_MC2)
 table(sample_data(phy_MC2)$New_Diet)
-lef_out<-run_lefse(phy_MC2, group = "New_Diet", taxa_rank = "Genus", transform = "log10",
+lef_out2<-run_lefse(phy_MC2, group = "New_Diet", taxa_rank = "Genus", transform = "log10",
                    kw_cutoff = 0.05, lda_cutoff = 2, strict = "2")
-plot_ef_bar(lef_out)
-table(marker_table(lef_out)$enrich_group)
+#plot_ef_bar(lef_out)
+a2 <- plot_abundance(lef_out2, group = "New_Diet")
+table(marker_table(lef_out2)$enrich_group)
 
 
 phy_MN3<-subset_samples(psdata, samplingTime %in% c("T1") & New_Diet %in% c("CTR", "MN3"))
-MN3 <- prune_taxa(taxa_sums(phy_MN3) >0, phy_MN3)
-table(sample_data(phy_MN3)$New_Diet)
-lef_out<-run_lefse(phy_MN3, group = "New_Diet", taxa_rank = "Genus", transform = "log10",
-                   kw_cutoff = 0.05, lda_cutoff = 2)
-plot_ef_bar(lef_out)
+phy_MN3 <- prune_taxa(taxa_sums(phy_MN3) >0, phy_MN3)
+table(phyloseq::sample_data(phy_MN3)$New_Diet)
+lef_out3<-microbiomeMarker::run_lefse(phy_MN3, group = "New_Diet", taxa_rank = "Genus", transform = "log10",
+                     kw_cutoff = 0.05, lda_cutoff = 2, strict = "2")
+#plot_ef_bar(lef_out)
+plot_abundance(lef_out, group = "New_Diet")
 table(marker_table(lef_out)$enrich_group)
 
+plot_grid(a1, a2, labels = "AUTO", ncol = 1)
 
 
 
@@ -1141,11 +1147,12 @@ table(marker_table(lef_out)$enrich_group)
 output_table <- data.frame()
 
 for (i in c("T1","T2","T3")){
-  for (j in c("MC1","MC2","MN3")){
+  for (j in c("MC1","MC2", "MN3")){
     phy<-subset_samples(psdata, samplingTime %in% c(i) & New_Diet %in% c("CTR", j))
     phy <- prune_taxa(taxa_sums(phy) >0, phy)
     lef_out<-run_lefse(phy, group = "New_Diet", taxa_rank = "Genus", transform = "log10",
                        kw_cutoff = 0.05, lda_cutoff = 2, strict = "2")
+    assign(paste0("p", i, j), plot_abundance(lef_out, group = "New_Diet"))
     output_table[i,j]<-sum(marker_table(lef_out)$enrich_group == j)
   }
 }
@@ -1153,37 +1160,36 @@ colnames(output_table)<-c("MC1", "MC2", "MN3")
 rownames(output_table) <- c("T1","T2","T3")
 output_table
 
+plot_grid(pT1MC1, pT1MC2, pT1MN3, pT2MC1, pT2MC2, pT2MN3, pT3MC1, pT3MC2, p3MN3, labels = "AUTO", ncol = 1)
+plot_grid(pT1MC1, pT1MC2,  pT2MC1, pT2MC2,  pT3MC1, pT3MC2, labels = "AUTO", ncol = 1, align = "hv")
 
 
 
 
 
+#Code for all time points and diets but ignoring "T1MN3"
+for (i in c("T1","T2","T3")){
+  for (j in c("MC1","MC2", "MN3")){
+    if (i == "T1" & j == "MN3"){
+      next
+    } else {
+      phy<-subset_samples(psdata, samplingTime %in% c(i) & New_Diet %in% c("CTR", j))
+      phy <- prune_taxa(taxa_sums(phy) >0, phy)
+      lef_out<-run_lefse(phy, group = "New_Diet", taxa_rank = "Genus", transform = "log10",
+                         kw_cutoff = 0.05, lda_cutoff = 2, strict = "2")
+      assign(paste0("metagenomics", i, j), plot_abundance(lef_out, group = "New_Diet"))
+      output_table[i,j]<-sum(marker_table(lef_out)$enrich_group == j)
+    }
+  }
+}
+colnames(output_table)<-c("MC1", "MC2", "MN3")
+rownames(output_table) <- c("T1","T2","T3")
+t(output_table)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+plot_grid(metagenomicsT1MC1, metagenomicsT1MC2, 
+          metagenomicsT2MC1, metagenomicsT2MC2, metagenomicsT2MN3, 
+          metagenomicsT3MC1, metagenomicsT3MC2, metagenomicsT3MN3, 
+          labels = "AUTO", ncol = 1, align = "hv")
 
 
 

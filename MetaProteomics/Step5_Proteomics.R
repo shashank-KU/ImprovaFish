@@ -32,7 +32,7 @@ dim(Proteomics) %>% paste(c("Samples", "Proteomics"))
 sampleTree = hclust(dist(Proteomics), method = "average");
 plot(sampleTree, main = "Sample clustering to detect outliers", sub="", xlab="", cex.lab = 1.5, cex.axis = 1.5, cex.main = 2)
 
-# outlier<-c("T3_ctr_tk3_VFA07")
+# outlier<-c("T3_CTR_tk3_VFA07")
 # Proteomics<- Proteomics %>%
 #   as.data.frame %>%
 #   filter(!row.names(Proteomics) %in% outlier)
@@ -294,7 +294,7 @@ cowplot::plot_grid(part_2, density_all_plot, ncol = 1, rel_heights = c(0.8,1), l
 
 #stage2results_Proteomics_backup <- stage2results_Proteomics
 stage2results_Proteomics 
-#rownames(stage2results_Proteomics$modules$MEs) <- gsub("-MC1-TK1-", "_mc1_tk1_", rownames(stage2results_Proteomics$modules$MEs))
+#rownames(stage2results_Proteomics$modules$MEs) <- gsub("-MC1-TK1-", "_MC1_tk1_", rownames(stage2results_Proteomics$modules$MEs))
 
 # Remove ME0 from analysis
 idx <- which(colnames(stage2results_Proteomics$modules$MEs) == "ME0")
@@ -461,6 +461,7 @@ raw <- as.matrix(Proteomics)
 OTU = otu_table(raw, taxa_are_rows = TRUE)
 dat <- read.csv("/Users/shashankgupta/Desktop/ImprovAFish/Proteomics-meta/metadata_proteomics.csv")
 row.names(dat) <- dat$Samples
+dat$New_Diet <- toupper(dat$Diet)
 # Merge into one complete phyloseq object
 ps <- merge_phyloseq(otu_table(OTU), sample_data(dat))
 tt <- as.data.frame(row.names(Proteomics))
@@ -469,7 +470,7 @@ colnames(tt)[1] <- "Kingdom"
 tax_table(ps) <- as.matrix(tt)
 
 set.seed(12345)
-ps_MC1<-subset_samples(ps, Diet %in% c("ctr", "mc1"))
+ps_MC1<-subset_samples(ps, Diet %in% c("CTR", "MC1"))
 ps_MC1 <- prune_taxa(taxa_sums(ps_MC1) >0, ps_MC1)
 table(sample_data(ps_MC1)$Diet)
 
@@ -480,22 +481,22 @@ lef_out<-run_lefse(ps_MC1, group = "Diet", norm = "CPM",
 
 plot_ef_bar(lef_out)
 table(marker_table(lef_out)$enrich_group)
-lef_out_MC1_ctr <- marker_table(lef_out)
-lef_out_MC1_ctr <- subset(lef_out_MC1_ctr, lef_out_MC1_ctr$enrich_group == "ctr")
-lef_out_MC1_ctr <- lef_out_MC1_ctr$feature
+lef_out_MC1_CTR <- marker_table(lef_out)
+lef_out_MC1_CTR <- subset(lef_out_MC1_CTR, lef_out_MC1_CTR$enrich_group == "CTR")
+lef_out_MC1_CTR <- lef_out_MC1_CTR$feature
 
 res <- ldamarker(ps_MC1, group="Diet")
-plotLDA(res,group=c("mc1","ctr"), lda=1.75, padj =  0.05, fontsize.y = 6)
+plotLDA(res,group=c("MC1","CTR"), lda=1.75, padj =  0.05, fontsize.y = 6)
 
 
 ##Change orientation
 # t1<- data.frame(marker_table(lef_out))
 # t1 %>%
-#   mutate(ef_lda = ifelse(enrich_group == "ctr", ef_lda, -ef_lda)) -> t1
+#   mutate(ef_lda = ifelse(enrich_group == "CTR", ef_lda, -ef_lda)) -> t1
 # marker_table(lef_out) <- t1
 
 
-ps_MC2<-subset_samples(ps, Diet %in% c("ctr", "mc2"))
+ps_MC2<-subset_samples(ps, Diet %in% c("CTR", "MC2"))
 ps_MC2 <- prune_taxa(taxa_sums(ps_MC2) >0, ps_MC2)
 table(sample_data(ps_MC2)$Diet)
 
@@ -505,37 +506,55 @@ lef_out<-run_lefse(ps_MC2, group = "Diet", norm = "CPM",
 
 plot_ef_bar(lef_out)
 table(marker_table(lef_out)$enrich_group)
-lef_out_MC2_ctr <- marker_table(lef_out)
-lef_out_MC2_ctr <- subset(lef_out_MC2_ctr, lef_out_MC2_ctr$enrich_group == "ctr")
-lef_out_MC2_ctr <- lef_out_MC2_ctr$feature
+lef_out_MC2_CTR <- marker_table(lef_out)
+lef_out_MC2_CTR <- subset(lef_out_MC2_CTR, lef_out_MC2_CTR$enrich_group == "CTR")
+lef_out_MC2_CTR <- lef_out_MC2_CTR$feature
 
 res <- ldamarker(ps_MC2, group="Diet")
-plotLDA(res,group=c("mc2","ctr"), lda=1.75, padj =  0.05, fontsize.y = 6)
+plotLDA(res,group=c("MC2","CTR"), lda=1.75, padj =  0.05, fontsize.y = 6)
 
 
-ps_MN3<-subset_samples(ps, Diet %in% c("ctr", "mn3"))
+ps_MN3<-subset_samples(ps, New_Diet %in% c("CTR", "MN3"))
 ps_MN3 <- prune_taxa(taxa_sums(ps_MN3) >0, ps_MN3)
-table(sample_data(ps_MN3)$Diet)
+table(sample_data(ps_MN3)$New_Diet)
 
 
-lef_out<-run_lefse(ps_MN3, group = "Diet", norm = "CPM", 
+lef_out<-run_lefse(ps_MN3, group = "New_Diet", norm = "CPM", 
                    kw_cutoff = 0.05, lda_cutoff = 1.75, taxa_rank = "none")
 
 plot_ef_bar(lef_out)
 table(marker_table(lef_out)$enrich_group)
 
-lef_out_MN3_ctr <- marker_table(lef_out)
-lef_out_MN3_ctr <- subset(lef_out_MN3_ctr, lef_out_MN3_ctr$enrich_group == "ctr")
-lef_out_MN3_ctr <- lef_out_MN3_ctr$feature
+lef_out_MN3_CTR <- marker_table(lef_out)
+lef_out_MN3_CTR <- subset(lef_out_MN3_CTR, lef_out_MN3_CTR$enrich_group == "CTR")
+lef_out_MN3_CTR <- lef_out_MN3_CTR$feature
 
 
-Reduce(intersect, list(lef_out_MC1_ctr,lef_out_MC2_ctr,lef_out_MN3_ctr))
+Reduce(intersect, list(lef_out_MC1_CTR,lef_out_MC2_CTR,lef_out_MN3_CTR))
 
 res <- ldamarker(ps_MN3, group="Diet")
-plotLDA(res,group=c("mn3","ctr"), lda=1.75, padj =  0.05, fontsize.y = 6)
+plotLDA(res,group=c("MN3","CTR"), lda=1.75, padj =  0.05, fontsize.y = 6)
 
 
+#loop
+output_table <- data.frame()
 
+for (i in c("T3")){
+  for (j in c("MC1","MC2", "MN3")){
+    phy<-subset_samples(ps, Time %in% c(i) & New_Diet %in% c("CTR", j))
+    phy <- prune_taxa(taxa_sums(phy) >0, phy)
+    lef_out<-run_lefse(phy,group = "New_Diet", norm = "CPM", 
+                       kw_cutoff = 0.05, lda_cutoff = 1.75, taxa_rank = "none")
+    assign(paste0("poteomics", i, j), plot_abundance(lef_out, group = "New_Diet"))
+    output_table[i,j]<-sum(marker_table(lef_out)$enrich_group == j)
+  }
+}
+#colnames(output_table)<-c("MC1", "MC2", "MN3")
+#rownames(output_table) <- c("T1","T2","T3")
+output_table
+
+#plot_grid(pT1MC1, pT1MC2, pT1MN3, pT2MC1, pT2MC2, pT2MN3, pT3MC1, pT3MC2, p3MN3, labels = "AUTO", ncol = 1)
+plot_grid(poteomicsT3MC1, poteomicsT3MC2, poteomicsT3MN3, labels = "AUTO", ncol = 1, align = "hv")
 
 
 
@@ -565,7 +584,7 @@ sample_info3$Sample.ID <- sample_info3$ID_New
 mME_meta <- merge(mME, sample_info3, by = "Sample.ID") 
 colnames(mME_meta)[2] <-"Module"
 
-mME_meta$New_Diet <- factor(mME_meta$New_Diet, levels = c("ctr", "mc1", "mc2", "mn3"))
+mME_meta$New_Diet <- factor(mME_meta$New_Diet, levels = c("CTR", "MC1", "MC2", "MN3"))
 mME_meta$Module <- factor(mME_meta$Module, levels = c("0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
                                                       "10", "11", "12", "13", "14", "15", "16", "17",
                                                       "18", "19", "20","21","22","23", "24"))

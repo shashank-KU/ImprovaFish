@@ -3,13 +3,27 @@ title: "Step2_RNA_Analysis"
 author: "Shashank Gupta"
 date: "2023-01-18"
 output:
-  pdf_document: default
-  html_document: default
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+  html_document:
+    toc: yes
+    toc_depth: 3
+    number_sections: yes
+    theme: united
+    highlight: tango
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+
+```{r, include=FALSE}
+options(tinytex.verbose = TRUE)
 ```
+
+```{r setup, include=FALSE} 
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+```
+
+
 
 ## Load all the packages used in the analysis
 ```{r message=FALSE, warning=FALSE}
@@ -36,10 +50,402 @@ library("metagenomeSeq")
 library("decontam")
 library("RColorBrewer")
 library("ampvis2")
+library("ggpubr")
+library("formatR")
+
+```
+
+## Load data
+
+```{r }
+raw <- import_biom("/Users/shashankgupta/Desktop/ImprovAFish/exported-feature-table/feature-table_taxonomy.biom")
+tree <- read_tree("/Users/shashankgupta/Desktop/ImprovAFish/exported-feature-table/tree.nwk")
+refseq <- Biostrings::readDNAStringSet("/Users/shashankgupta/Desktop/ImprovAFish/exported-feature-table/dna-sequences.fasta", use.names = TRUE)
+dat <- read.table("/Users/shashankgupta/Desktop/ImprovAFish/metadata.txt", header = TRUE,row.names = 1, sep = "\t")
+# Merge into one complete phyloseq object
+all <- merge_phyloseq(raw, sample_data(dat), tree, refseq)
+```
+
+
+### Cleaning the data
+```{r}
+tax <- data.frame(tax_table(all), stringsAsFactors = FALSE)
+tax <- tax[,1:7] # No info in col 8-15
+# Set informative colnames
+colnames(tax) <- c("Kingdom", "Phylum","Class","Order","Family","Genus", "Species")
+tax.clean <- data.frame(row.names = row.names(tax),
+                        Kingdom = str_replace(tax[,1], "d__",""), 
+                        Phylum = str_replace(tax[,2], "p__",""),
+                        Class = str_replace(tax[,3], "c__",""),
+                        Order = str_replace(tax[,4], "o__",""),
+                        Family = str_replace(tax[,5], "f__",""),
+                        Genus = str_replace(tax[,6], "g__",""),
+                        Species = str_replace(tax[,7], "s__",""), 
+                        stringsAsFactors = FALSE)
+tax.clean[is.na(tax.clean)] <- ""
+# - Clean rank by rank
+# Kingdom - Remove the unassigned completely
+# Phylum
+# Class
+# Remove extra info about origin from some bacteria
+# Remove all fields that contain "uncultured", "Unknown" or "Ambigious"
+bad <- c("Ambiguous_taxa","uncultured", "Subgroup_21")
+tax.clean[tax.clean$Class %in% bad,3:7] <- ""
+
+# Order
+bad <- c("0319-6G20","1-20","11-24", "ADurb.Bin180","D8A-2", "Group_1.1c", "JGI_0000069-P22","Marine_Group_II",
+         "Pla3_lineage","Run-SP154",
+         "Ambiguous_taxa", "uncultured", "UBA10353_marine_group",
+         "Subgroup_17", "SAR86_clade", "SAR11_clade", "SAR202_clade", "Chloroplast")
+tax.clean[tax.clean$Order %in% bad,4:7] <- ""
+
+# Family
+bad <- c("Ambiguous_taxa","11-24","67-14", "uncultured", "SAR116_clade", "Run-SP154", 
+         "Marine_Group_II", "env.OPS_17", "SAR116_clade", "S085", "S-70", "NS9_marine_group", "Mitochondria")
+tax.clean[tax.clean$Family %in% bad,5:7] <- ""
+
+# Genus
+bad <- c("Ambiguous_taxa","Unknown_Family","uncultured","Subgroup_10", "1174-901-12", "67-14")
+tax.clean[tax.clean$Genus %in% bad,6:7] <- ""
+
+# Species
+bad <- c("Ambiguous_taxa","marine_metagenome","low_GC","wastewater_metagenome","unidentified", 
+         "uncultured_synthetic", "uncultured_organism")
+tax.clean[tax.clean$Species %in% bad,6:7] <- ""
+
+#tax.clean[grepl("uncultured", tax.clean$Species),"Species"] <- ""
+#tax.clean[grepl("unidentified", tax.clean$Species),"Species"] <- ""
+
+# Remove remove ".", change "-" and " " to "_"
+for (i in 1:ncol(tax.clean)){
+  tax.clean[,i] <- str_replace_all(tax.clean[,i], "[.]","")
+  tax.clean[,i] <- str_replace_all(tax.clean[,i], "[(]","")
+  tax.clean[,i] <- str_replace_all(tax.clean[,i], "[)]","")
+  tax.clean[,i] <- str_replace_all(tax.clean[,i], "-","_")
+  tax.clean[,i] <- str_replace_all(tax.clean[,i], " ","_")
+}
+
+for (i in 1:7){ tax.clean[,i] <- as.character(tax.clean[,i])}
+# File holes in the tax table
+for (i in 1:nrow(tax.clean)){
+  #  Fill in missing taxonomy
+  if (tax.clean[i,2] == ""){
+    kingdom <- paste("Kingdom_", tax.clean[i,1], sep = "")
+    tax.clean[i, 2:7] <- kingdom
+  } else if (tax.clean[i,3] == ""){
+    phylum <- paste("Phylum_", tax.clean[i,2], sep = "")
+    tax.clean[i, 3:7] <- phylum
+  } else if (tax.clean[i,4] == ""){
+    class <- paste("Class_", tax.clean[i,3], sep = "")
+    tax.clean[i, 4:7] <- class
+  } else if (tax.clean[i,5] == ""){
+    order <- paste("Order_", tax.clean[i,4], sep = "")
+    tax.clean[i, 5:7] <- order
+  } else if (tax.clean[i,6] == ""){
+    family <- paste("Family_", tax.clean[i,5], sep = "")
+    tax.clean[i, 6:7] <- family
+  } else if (tax.clean[i,7] == ""){
+    tax.clean$Species[i] <- paste("Genus_",tax.clean$Genus[i], sep = "_")
+  }
+}
+
+rm(bad, class, family, i, kingdom,new,order,phylum,uncul)
+
+tax_table(all) <- as.matrix(tax.clean)
+all
+#Remove Unnassigned
+#all.clean <- subset_taxa(all, Kingdom != "Archaea")
+#all.clean <- subset_taxa(all.clean, Kingdom != "Eukaryota")
+all.clean <- subset_taxa(all, Kingdom != "Unassigned")
+all.clean <- prune_taxa(taxa_sums(all.clean) > 0, all.clean)
+all.clean
+```
+
+```{r echo=FALSE}
+estimate_rarified_richness <- function(psdata, measures, depth) {
+  if(max(sample_sums(psdata)) < depth) return()
+  psdata <- prune_samples(sample_sums(psdata) >= depth, psdata)
+  rarified_psdata <- rarefy_even_depth(psdata, depth, verbose = FALSE)
+  alpha_diversity <- estimate_richness(rarified_psdata, measures = measures)
+  
+  # as.matrix forces the use of melt.array, which includes the Sample names (rownames)
+  molten_alpha_diversity <- melt(as.matrix(alpha_diversity), varnames = c('Sample', 'Measure'), value.name = 'Alpha_diversity')
+  
+  molten_alpha_diversity
+}
+
+```
+
+
+
+
+### Rarefaction plot
+```{r eecho=T, results='hide'}
+p <- ranacapa::ggrare(all.clean, step = 1000, color = "New_Diet", label = "samplingTime", se = FALSE, parallel = TRUE)
+```
+
+```{r}
+p + facet_wrap(~New_Diet)+ theme_bw()
+
+```
+
+
+### Raw data Observed richness
+```{r}
+
+shannon.div <- estimate_richness(all.clean, measures = c("Shannon", "Simpson", "Observed","Chao1"))
+sampledata1<- data.frame(sample_data(all.clean))
+row.names(shannon.div) <- gsub("[.]","-", row.names(shannon.div))
+sampleData <- merge(sampledata1, shannon.div, by = 0 , all = TRUE)
+cols  <- c(brewer.pal(8,"Set1"), brewer.pal(7,"Dark2"),brewer.pal(7,"Set2"),brewer.pal(12,"Set3"),brewer.pal(7,"Accent"),brewer.pal(12,"Paired"),"gray")
+
+sampleData$New_Diet <- factor(sampleData$New_Diet, levels=c('ext-ctrl', 'CTR', 'MC1', 'MC2', 'MN3'))
+levels(sampleData$New_Diet)
+
+my_comparisons <- list( c("ext-ctrl", "MC1"), c("ext-ctrl", "MC2"), c("ext-ctrl", "MN3"),
+                        c("CTR", "MC1"), c("CTR", "MC2"),
+                        c("CTR", "MN3"))
+p1 <- ggboxplot(sampleData, x = "New_Diet", y = "Observed",
+                color = "New_Diet", palette = "jco", legend = "none")+ 
+  stat_compare_means(comparisons = my_comparisons)+ # Add pairwise comparisons p-value
+  stat_compare_means(label.y = 400) +
+  geom_jitter(aes(colour = New_Diet), size = 2, alpha = 0.6) +
+  geom_boxplot(aes(fill = New_Diet), width=0.7, alpha = 0.5) +
+  theme_bw() +  theme(legend.position="none",axis.title.x=element_blank())    +   scale_fill_manual(values =cols) + scale_colour_manual( values = cols)
+
+ggboxplot(sampleData, x = "New_Diet", y = "Shannon",
+          color = "New_Diet", palette = "jco", legend = "none")+ 
+  stat_compare_means(comparisons = my_comparisons)+ # Add pairwise comparisons p-value
+  stat_compare_means(label.y = 8) +
+  geom_jitter(aes(colour = New_Diet), size = 2, alpha = 0.6) +
+  geom_boxplot(aes(fill = New_Diet), width=0.7, alpha = 0.5) +
+  theme_bw() +  theme(legend.position="none",axis.title.x=element_blank())     # Add global p-value
+
+
+
+set.seed(1)
+PCoA_bray <- ordinate(physeq = all.clean, method = "PCoA", distance = "bray")
+PCoA_bray_plot<- plot_ordination(
+  physeq = all.clean, 
+  ordination = PCoA_bray, 
+  color = "New_Diet"
+) + 
+  geom_point(shape = 19, alpha=0.7) + theme_bw() + ggtitle("PCoA Plot - Bray") + 
+  xlab("PCoA 1 [17.4 %]") + ylab("PCoA 2 [8.8 %]") + stat_ellipse()+   scale_fill_manual(values =cols) + scale_colour_manual( values = cols)
+
+
+PCoA_wunifrac <- ordinate(physeq = all.clean, method = "PCoA", distance = "wunifrac")
+PCoA_wunifrac_plot<- plot_ordination(
+  physeq = all.clean, 
+  ordination = PCoA_wunifrac, 
+  color = "New_Diet"
+) + 
+  geom_point(shape = 19, alpha=0.7) + theme_bw() + ggtitle("PCoA Plot - weighted unifrac") + 
+  xlab("PCoA 1 [68.2 %]") + ylab("PCoA 2 [8.3 %]") + stat_ellipse()+   scale_fill_manual(values =cols) + scale_colour_manual( values = cols)
+
+PCoA_wunifrac_plot
+bottom_row <- plot_grid(p1, PCoA_bray_plot, labels = c('B', 'C'), align = 'h', rel_widths = c(1, 1.3))
+plot_grid(p, bottom_row, labels = c('A', ''), ncol = 1, rel_heights = c(1, 1.2))
+```
+
+```{r}
+
+sampledf <- data.frame(sample_data(all.clean))
+bcdist <- phyloseq::distance(all.clean, method="bray",normalized=TRUE) 
+adonis2(bcdist ~ New_Diet, 
+        data = sampledf, permutations = 9999)
+
+```
+
+## Contamination removal
+```{r}
+df <- as.data.frame(sample_data(all.clean)) # Put sample_data into a ggplot-friendly data.frame
+df$Sample_or_Control <- ifelse( df$New_Diet  %in% c("ext-ctrl"), "Control_Sample", "True_Sample")
+sample_data(all.clean) <- df
+df$LibrarySize <- sample_sums(all.clean)
+df <- df[order(df$LibrarySize),]
+df$Index <- seq(nrow(df))
+ggplot(data=df, aes(x=Index, y=LibrarySize, color=Sample_or_Control)) + geom_point() + theme_bw()
+
+# Identify Contaminants - Prevalence
+sample_data(all.clean)$is.neg <- sample_data(all.clean)$Sample_or_Control == "Control_Sample"
+contamdf.prev <- isContaminant(all.clean, method="prevalence", neg="is.neg")
+#table(contamdf.prev$contaminant)
+#head(which(contamdf.prev$contaminant))
+
+#more aggressive classification threshold rather than the default. i.e., 0.05
+contamdf.prev05 <- isContaminant(all.clean, method="prevalence", neg="is.neg", threshold=0.5)
+#table(contamdf.prev05$contaminant)
+all.noncontam <- prune_taxa(!contamdf.prev05$contaminant, all.clean)
+
+set.seed(1)
+PCoA_bray <- ordinate(physeq = all.noncontam, method = "PCoA", distance = "bray")
+PCoA_bray_plot<- plot_ordination(
+  physeq = all.noncontam, 
+  ordination = PCoA_bray, 
+  color = "New_Diet"
+) + 
+  geom_point(shape = 19, alpha=0.7) + theme_bw() + ggtitle("PCoA Plot - Bray") + 
+  xlab("PCoA 1 [17.6 %]") + ylab("PCoA 2 [9 %]") + stat_ellipse()
+
+PCoA_bray_plot
+
+PCoA_wunifrac <- ordinate(physeq = all.noncontam, method = "PCoA", distance = "unifrac")
+PCoA_wunifrac_plot<- plot_ordination(
+  physeq = all.noncontam, 
+  ordination = PCoA_wunifrac, 
+  color = "New_Diet"
+) + 
+  geom_point(shape = 19, alpha=0.7) + theme_bw() + ggtitle("PCoA Plot - Bray") + 
+  xlab("PCoA 1 [3.3 %]") + ylab("PCoA 2 [2.3 %]") + stat_ellipse()
+PCoA_wunifrac_plot
+
+psdata <- subset_samples(all.noncontam, Sample_or_Control=="True_Sample")
+psdata <- prune_taxa(taxa_sums(psdata) > 0, psdata)
+psdata
+
+```
+
+```{r echo=FALSE}
+#### Used in script 3_Rarefaction ####
+# Calculate rarefaction curves
+estimate_rarified_richness <- function(psdata, measures, depth) {
+  if(max(sample_sums(psdata)) < depth) return()
+  psdata <- prune_samples(sample_sums(psdata) >= depth, psdata)
+  rarified_psdata <- rarefy_even_depth(psdata, depth, verbose = FALSE)
+  alpha_diversity <- estimate_richness(rarified_psdata, measures = measures)
+  
+  # as.matrix forces the use of melt.array, which includes the Sample names (rownames)
+  molten_alpha_diversity <- melt(as.matrix(alpha_diversity), varnames = c('Sample', 'Measure'), value.name = 'Alpha_diversity')
+  
+  molten_alpha_diversity
+}
+
+# DESCRIBE
+multiple_rarefy <- function(physeq, ntables=100, depth = min(rowSums(rawtab))*0.9, distmethod="bray", summarymeasure=mean, seedstart=500, verbose=TRUE) {
+  require("vegan")
+  # Orientate the OTU correctly
+  if (taxa_are_rows(physeq)){rawtab<-unclass(t(otu_table(physeq)))} else rawtab <- unclass(otu_table(physeq))
+  
+  # Ignore samples below rarefaction depth
+  ind <- (rowSums(rawtab) < depth)
+  sam.discard <- rownames(rawtab)[ind]
+  otu.tab <- rawtab[!ind, ]
+  
+  # Rarefaction function
+  rarefy <- function(x, depth) {
+    y <- sample(rep(1:length(x), x), depth)
+    y.tab <- table(y)
+    j <- numeric(length(x))
+    j[as.numeric(names(y.tab))] <- y.tab
+    j
+  }
+  
+  # Table to output rarefied data
+  final_tab = c()
+  # Table to output alpha diversity table
+  Alpha_diversity = data.frame(row.names = row.names(otu.tab),
+                               ObservedRichness_mean = numeric(length = nrow(otu.tab)),
+                               ObservedRichness_sd = numeric(length = nrow(otu.tab)),
+                               SDI_mean = numeric(length = nrow(otu.tab)),
+                               SDI_sd = numeric(length = nrow(otu.tab)))
+  
+  # Run each sample separately
+  for (z in 1:nrow(otu.tab)) {
+    if (verbose==TRUE) {
+      print(paste("Rarefaction sample number", z, sep=" "))
+    }
+    numbers <- otu.tab[z,]
+    
+    # Rarefy the sample ntables times
+    set.seed(seedstart + z)
+    rare_tab <- lapply(1:ntables,function(k) rarefy(numbers,depth))
+    
+    rare_tab <- do.call(rbind, rare_tab)
+    # Remove columns with no reads
+    rare_tab_no_zero <- rare_tab[,colSums(rare_tab) != 0]
+    # distance across reps for subject z
+    distmat = as.matrix(vegdist(rare_tab_no_zero, method=distmethod)) 
+    # calculate mean distance for each rep 
+    distsummary = apply(distmat, 2, summarymeasure)
+    # the best rep is the one with the mean distance to all other reps. (in case of ties, just select the first)
+    whichbestrep = which(distsummary == min(distsummary))[1]  
+    # select that rep only for subject z
+    bestrep = rare_tab[whichbestrep,]
+    # build that rep for subject y into final table
+    final_tab = rbind(final_tab, bestrep) 
+    # Calculate observed richness for each rep of sample z
+    obs <- rowSums(rare_tab != 0)
+    # Save mean and sd of observed richness
+    Alpha_diversity$ObservedRichness_mean[z] <- mean(obs)
+    Alpha_diversity$ObservedRichness_sd[z] <- sd(obs)
+    
+    # Calculate SDI for each rep of sample z
+    sha <- diversity(rare_tab, index = "shannon")
+    # Save mean and sd of SDI
+    Alpha_diversity$SDI_mean[z] <- mean(sha)
+    Alpha_diversity$SDI_sd[z] <- sd(sha)
+  }
+  
+  # Remove samples with too few reads
+  physeq <- prune_samples(!sample_names(physeq) %in% sam.discard, physeq) 
+  # Reformat final tab and return to the physeq object
+  rownames(final_tab) = rownames(otu.tab)
+  colnames(final_tab) = colnames(otu.tab)
+  otu_table(physeq) <- otu_table(t(final_tab), taxa_are_rows = T)
+  
+  # Add alpha diversity to sample data
+  sample_data(physeq) <- cbind(sample_data(physeq),Alpha_diversity)
+  # Return physeq to the environment
+  return(physeq)
+}
+```
+
+## Inspect the number of reads per sample and compare to rarefaction curves
+```{r}
+sample_data(psdata)$reads <- unlist(sample_sums(psdata))
+dat1 <- data.frame(sample_data(psdata))
+#table(dat1$reads)
+
+# Set a cutoff where Shannon diversity dont increase, and observed increases markedly slower.
+# At the same time don't throw too many samples out. Set the cutoff value accordingly
+cutoff <- 0
+
+# See which samples have been removed
+#dat1[dat1$reads < cutoff,]
+
+# Remove the samples with fewer reads than the cutoff
+psdata.p <- prune_samples(sample_sums(psdata) > cutoff, psdata)
+psdata.p <- prune_taxa(taxa_sums(psdata.p) >0, psdata.p)
+psdata.p
+```
+
+
+```{r echo=T, results='hide'}
+# Rarefy the samples using the function multiple_rarefy
+psdata.r <- multiple_rarefy(psdata.p)
+#psdata.r = rarefy_even_depth(psdata.p, rngseed=1, sample.size=0.9*min(sample_sums(psdata.p)), replace=F)
+#psdata.r = rarefy_even_depth(psdata.p)
 ```
 
 
 ```{r}
-
+psdata.r<- transform_sample_counts(psdata.p, function(x) x / sum(x) )
+psdata.r <- prune_taxa(taxa_sums(psdata.r) > 0, psdata.r)
+psdata.r
+#table(sample_sums(psdata.r))
+rm(all)
+rm(all.clean)
+rm(all.noncontam)
 ```
+
+
+```{r echo=T, results='hide'}
+p2<- ggrare(psdata.p, step = 1000, color = "New_Diet", label = "samplingTime", se = FALSE)+ facet_wrap(~New_Diet)+ theme_bw()
+```
+```{r}
+p2
+```
+
+
 

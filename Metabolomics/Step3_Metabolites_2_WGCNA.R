@@ -444,6 +444,8 @@ raw <- as.matrix(metabolites_RP)
 OTU = otu_table(raw, taxa_are_rows = TRUE)
 dat <- read.csv("/Users/shashankgupta/Desktop/ImprovAFish/Metabolomics/Metabolomics/For_Heatmap_Merge_both_HILIC_RP/RP_metadata.csv")
 row.names(dat) <- dat$Sample
+dat$New_Diet <- toupper(dat$Diet)
+
 # Merge into one complete phyloseq object
 ps <- merge_phyloseq(otu_table(OTU), sample_data(dat))
 tt <- as.data.frame(row.names(metabolites_RP))
@@ -552,6 +554,29 @@ nrow(subset(res, res$direction ==  "mn3" & res$p.adj < 0.05))
 
 
 
+
+#loop
+output_table <- data.frame()
+
+for (i in c("T2", "T3")){
+  for (j in c("MC1","MC2", "MN3")){
+    phy<-subset_samples(ps, Time %in% c(i) & New_Diet %in% c("CTR", j))
+    phy <- prune_taxa(taxa_sums(phy) >0, phy)
+    lef_out<-run_lefse(phy,group = "New_Diet", norm = "CPM", 
+                       kw_cutoff = 0.05, lda_cutoff = 2, taxa_rank = "none")
+    assign(paste0("RP_metabolomics", i, j), plot_abundance(lef_out, group = "New_Diet"))
+    output_table[i,j]<-sum(marker_table(lef_out)$enrich_group == j)
+  }
+}
+#colnames(output_table)<-c("MC1", "MC2", "MN3")
+#rownames(output_table) <- c("T1","T2","T3")
+t(output_table)
+
+plot_grid(RP_metabolomicsT2MC1, RP_metabolomicsT2MC2, RP_metabolomicsT2MN3, 
+          RP_metabolomicsT3MC1, RP_metabolomicsT3MC2, RP_metabolomicsT3MN3, 
+          labels = "AUTO", ncol = 1, align = "hv", rel_heights = c(0.3,0.3,1.2,1.2,2.8,2.8))
+# portrait 25 *10
+#plot_grid(poteomicsT3MC1, poteomicsT3MC2, poteomicsT3MN3, labels = "AUTO", ncol = 1, align = "hv")
 
 
 

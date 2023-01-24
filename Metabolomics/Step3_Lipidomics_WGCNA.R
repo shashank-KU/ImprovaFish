@@ -444,6 +444,7 @@ raw <- as.matrix(Lipidomics)
 OTU = otu_table(raw, taxa_are_rows = TRUE)
 dat <- read.csv("/Users/shashankgupta/Desktop/ImprovAFish/Metabolomics/Lipidomics/Lipidomics Data/Metadata.csv")
 row.names(dat) <- dat$Sample
+dat$New_Diet <- toupper(dat$Diet)
 # Merge into one complete phyloseq object
 ps <- merge_phyloseq(otu_table(OTU), sample_data(dat))
 tt <- as.data.frame(row.names(Lipidomics))
@@ -452,104 +453,125 @@ colnames(tt)[1] <- "Kingdom"
 tax_table(ps) <- as.matrix(tt)
 
 #T2
-ps_MC1<-subset_samples(ps, Time %in% c("T2") & Diet %in% c("ctr", "mc1"))
+ps_MC1<-subset_samples(ps, Time %in% c("T2") & New_Diet %in% c("CTR", "MC1"))
 ps_MC1 <- prune_taxa(taxa_sums(ps_MC1) >0, ps_MC1)
-table(sample_data(ps_MC1)$Diet)
+table(sample_data(ps_MC1)$New_Diet)
 
 
-lef_out<-run_lefse(ps_MC1, group = "Diet", norm = "CPM", 
+lef_out<-run_lefse(ps_MC1, group = "New_Diet", norm = "CPM", 
                    kw_cutoff = 0.05, lda_cutoff = 2, taxa_rank = "none")
 
 plot_ef_bar(lef_out)
 table(marker_table(lef_out)$enrich_group)
 
-res <- ldamarker(ps_MC1,group="Diet")
-plotLDA(res,group=c("mc1","ctr"),lda=0, padj = 0.05, fontsize.y = 6)
+res <- ldamarker(ps_MC1,group="New_Diet")
+plotLDA(res,group=c("MC1","CTR"),lda=0, padj = 0.05, fontsize.y = 6)
 
 
 
-ps_MC2<-subset_samples(ps, Time %in% c("T2") & Diet %in% c("ctr", "mc2"))
+ps_MC2<-subset_samples(ps, Time %in% c("T2") & New_Diet %in% c("CTR", "MC2"))
 ps_MC2 <- prune_taxa(taxa_sums(ps_MC2) >0, ps_MC2)
-table(sample_data(ps_MC2)$Diet)
+table(sample_data(ps_MC2)$New_Diet)
 
 
-lef_out<-run_lefse(ps_MC2, group = "Diet", norm = "CPM", 
+lef_out<-run_lefse(ps_MC2, group = "New_Diet", norm = "CPM", 
                    kw_cutoff = 0.05, lda_cutoff = 1.75, taxa_rank = "none")
 
 plot_ef_bar(lef_out)
 table(marker_table(lef_out)$enrich_group)
 
-res <- ldamarker(ps_MC2, group="Diet")
-plotLDA(res,group=c("mc2","ctr"), lda=0, padj = 0.05, fontsize.y = 6)
+res <- ldamarker(ps_MC2, group="New_Diet")
+plotLDA(res,group=c("MC2","CTR"), lda=0, padj = 0.05, fontsize.y = 6)
 
 
-ps_MN3<-subset_samples(ps, Time %in% c("T2") & Diet %in% c("ctr", "mn3"))
+ps_MN3<-subset_samples(ps, Time %in% c("T2") & New_Diet %in% c("CTR", "MN3"))
 ps_MN3 <- prune_taxa(taxa_sums(ps_MN3) >0, ps_MN3)
-table(sample_data(ps_MN3)$Diet)
+table(sample_data(ps_MN3)$New_Diet)
 
 
-lef_out<-run_lefse(ps_MN3, group = "Diet", norm = "CPM", 
+lef_out<-run_lefse(ps_MN3, group = "New_Diet", norm = "CPM", 
                    kw_cutoff = 0.05, lda_cutoff = 1.75, taxa_rank = "none")
 
 plot_ef_bar(lef_out)
 table(marker_table(lef_out)$enrich_group)
 
-res <- ldamarker(ps_MN3, group="Diet")
-plotLDA(res,group=c("mn3","ctr"), lda=0, padj = 0.05, fontsize.y = 6)
+res <- ldamarker(ps_MN3, group="New_Diet")
+plotLDA(res,group=c("MN3","CTR"), lda=0, padj = 0.05, fontsize.y = 6)
 
 
 
 
 #T3
-ps_MC1<-subset_samples(ps, Time %in% c("T3") & Diet %in% c("ctr", "mc1"))
+ps_MC1<-subset_samples(ps, Time %in% c("T3") & New_Diet %in% c("CTR", "MC1"))
 ps_MC1 <- prune_taxa(taxa_sums(ps_MC1) >0, ps_MC1)
-table(sample_data(ps_MC1)$Diet)
+table(sample_data(ps_MC1)$New_Diet)
 
 
-lef_out<-run_lefse(ps_MC1, group = "Diet", norm = "CPM", 
+lef_out<-run_lefse(ps_MC1, group = "New_Diet", norm = "CPM", 
                    kw_cutoff = 0.05, lda_cutoff = 2, taxa_rank = "none")
 
 plot_ef_bar(lef_out)
 table(marker_table(lef_out)$enrich_group)
 
-res <- ldamarker(ps_MC1,group="Diet")
-plotLDA(res,group=c("mc1","ctr"),lda=0, padj = 0.05, fontsize.y = 6)
+res <- ldamarker(ps_MC1,group="New_Diet")
+plotLDA(res,group=c("MC1","CTR"),lda=0, padj = 0.05, fontsize.y = 6)
 
 
 
-ps_MC2<-subset_samples(ps, Time %in% c("T3") & Diet %in% c("ctr", "mc2"))
+ps_MC2<-subset_samples(ps, Time %in% c("T3") & New_Diet %in% c("CTR", "MC2"))
 ps_MC2 <- prune_taxa(taxa_sums(ps_MC2) >0, ps_MC2)
-table(sample_data(ps_MC2)$Diet)
+table(sample_data(ps_MC2)$New_Diet)
 
 
-lef_out<-run_lefse(ps_MC2, group = "Diet", norm = "CPM", 
+lef_out<-run_lefse(ps_MC2, group = "New_Diet", norm = "CPM", 
                    kw_cutoff = 0.05, lda_cutoff = 2, taxa_rank = "none")
 
 plot_ef_bar(lef_out)
 table(marker_table(lef_out)$enrich_group)
 
-res <- ldamarker(ps_MC2, group="Diet")
-plotLDA(res,group=c("mc2","ctr"), lda=2, padj = 0.05, fontsize.y = 6)
+res <- ldamarker(ps_MC2, group="New_Diet")
+plotLDA(res,group=c("MC2","CTR"), lda=2, padj = 0.05, fontsize.y = 6)
 
-nrow(subset(res, res$direction ==  "mc2" & res$p.adj < 0.05))
+nrow(subset(res, res$direction ==  "MC2" & res$p.adj < 0.05))
 
-ps_MN3<-subset_samples(ps, Time %in% c("T3") & Diet %in% c("ctr", "mn3"))
+ps_MN3<-subset_samples(ps, Time %in% c("T3") & New_Diet %in% c("CTR", "MN3"))
 ps_MN3 <- prune_taxa(taxa_sums(ps_MN3) >0, ps_MN3)
-table(sample_data(ps_MN3)$Diet)
+table(sample_data(ps_MN3)$New_Diet)
 
 
-lef_out<-run_lefse(ps_MN3, group = "Diet", norm = "CPM", 
+lef_out<-run_lefse(ps_MN3, group = "New_Diet", norm = "CPM", 
                    kw_cutoff = 0.05, lda_cutoff = 2, taxa_rank = "none")
 
 plot_ef_bar(lef_out)
 table(marker_table(lef_out)$enrich_group)
 
 
-res <- ldamarker(ps_MN3, group="Diet")
-plotLDA(res,group=c("mn3","ctr"), lda=2, padj = 0.05, fontsize.y = 6)
+res <- ldamarker(ps_MN3, group="New_Diet")
+plotLDA(res,group=c("MN3","CTR"), lda=2, padj = 0.05, fontsize.y = 6)
 
-nrow(subset(res, res$direction ==  "mn3" & res$p.adj < 0.05))
+nrow(subset(res, res$direction ==  "MN3" & res$p.adj < 0.05))
 
+
+#loop
+output_table <- data.frame()
+
+for (i in c("T2", "T3")){
+  for (j in c("MC1","MC2", "MN3")){
+    phy<-subset_samples(ps, Time %in% c(i) & New_Diet %in% c("CTR", j))
+    phy <- prune_taxa(taxa_sums(phy) >0, phy)
+    lef_out<-run_lefse(phy,group = "New_Diet", norm = "CPM", 
+                       kw_cutoff = 0.05, lda_cutoff = 2, taxa_rank = "none")
+    assign(paste0("Lipid", i, j), plot_abundance(lef_out, group = "New_Diet"))
+    output_table[i,j]<-sum(marker_table(lef_out)$enrich_group == j)
+  }
+}
+#colnames(output_table)<-c("MC1", "MC2", "MN3")
+#rownames(output_table) <- c("T1","T2","T3")
+t(output_table)
+
+plot_grid(LipidT2MC1, LipidT2MC2, LipidT2MN3, LipidT3MC1, LipidT3MC2, LipidT3MN3, labels = "AUTO", ncol = 1, align = "hv")
+# portrait 25 *10
+#plot_grid(poteomicsT3MC1, poteomicsT3MC2, poteomicsT3MN3, labels = "AUTO", ncol = 1, align = "hv")
 
 
 
