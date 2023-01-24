@@ -3,7 +3,7 @@ library(DESeq2)
 library(WGCNA)
 library(stringr)
 library(dplyr)
-load("../../metatranscriptomics/CountsKallistoQuantificationDeNovoSTxDRAM/dds.Stx.RData")
+load("/Users/shashankgupta/Desktop/ImprovAFish/metatranscriptomics/CountsKallistoQuantificationDeNovoSTxDRAM/dds.Stx.RData")
 dds <- dds[ , dds$TimePoint != "T0"]
 keep <- rowSums(counts(dds) >=5) >= 5
 dds <- dds[keep,]
@@ -430,7 +430,7 @@ pheatmap::pheatmap(MetaTrans_corr_X$correlation,
 
 library(DESeq2)
 library(BiocParallel)
-load("../../metatranscriptomics/CountsKallistoQuantificationDeNovoSTxDRAM/dds.Stx.RData")
+load("/Users/shashankgupta/Desktop/ImprovAFish/metatranscriptomics/CountsKallistoQuantificationDeNovoSTxDRAM/dds.Stx.RData")
 dds <- dds[ , dds$TimePoint != "T0"]
 keep <- rowSums(counts(dds) >=5) >= 5
 dds <- dds[keep,]
@@ -565,4 +565,44 @@ res_tbl <- as_tibble(res, rownames = "ENSEMBL") %>%
 
 length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
 length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
+
+
+
+
+
+
+# loop
+# Create the dataframe
+df <- data.frame(Group=character(), a1=character(), a2=character(), a3=character())
+
+# Loop through each group and store the results in the dataframe
+for(treatment in c("T1", "T2", "T3")){
+  for(group in c("mc1","mc2","mn3")){
+    sample_name <- paste0("group",treatment,group)
+    ctr_sample <- paste0("group",treatment,"ctr")
+    
+    # Calculate results
+    res <- results(dds, contrast = list(sample_name,ctr_sample))
+    
+    # Filter the results and count the number of positive elements
+    res_tbl <- as_tibble(res, rownames = "ENSEMBL") %>%
+      filter(padj <0.05)%>%
+      arrange(padj)
+    a <- length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0])
+    
+    # Store the results in the dataframe
+    df <- rbind(df, c(sample_name,a))
+  }
+}
+
+# Rename the columns
+names(df) <- c("Group", "a1", "a2", "a3")
+
+# View the dataframe
+df
+
+
+
+
+
 

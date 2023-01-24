@@ -843,7 +843,6 @@ length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elemen
 length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
 
 
-
 # T2
 res <- results(dds,
                contrast = list("groupT2mc1","groupT2ctr"))
@@ -925,6 +924,35 @@ length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elemen
 
 
 
+# loop
+# Create the dataframe
+df <- data.frame(Group=character(), a1=character(), a2=character(), a3=character())
+
+# Loop through each group and store the results in the dataframe
+for(treatment in c("T1", "T2", "T3")){
+  for(group in c("mc1","mc2","mn3")){
+    sample_name <- paste0("group",treatment,group)
+    ctr_sample <- paste0("group",treatment,"ctr")
+    
+    # Calculate results
+    res <- results(dds, contrast = list(sample_name,ctr_sample))
+    
+    # Filter the results and count the number of positive elements
+    res_tbl <- as_tibble(res, rownames = "ENSEMBL") %>%
+      filter(padj <0.05)%>%
+      arrange(padj)
+    a <- length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0])
+    
+    # Store the results in the dataframe
+    df <- rbind(df, c(sample_name,a))
+  }
+}
+
+# Rename the columns
+names(df) <- c("Group", "a1", "a2", "a3")
+
+# View the dataframe
+df
 
 
 
