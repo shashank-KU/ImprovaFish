@@ -444,7 +444,7 @@ geneTree <- modules.omics_X$dendrograms[[1]]
 
 
 #https://gitlab.com/garethgillard/ssalv3annotation
-annot1 <- read.csv("Salmo_salar-GCA_905237065.2_gene_annotations.csv", header = TRUE)
+annot1 <- read.csv("../../ImprovAFish_Final/Salmo_salar-GCA_905237065.2_gene_annotations.csv", header = TRUE)
 probes <- colnames(omics_data_host) 
 probes2annot <- match(probes, annot1$gene_id)
 allLLIDs <- annot1$v2.gene_id.NCBI[probes2annot]
@@ -467,9 +467,46 @@ fileName = paste("LocusLinkIDs-all.txt", sep="");
 write.table(as.character(allLLIDs), file = fileName, row.names = FALSE, col.names = FALSE)
 
 
+#read a text file in R for all the unique names present in "moduleColors" and read the file with unique names. e.g.,
 
+setwd("../../ImprovAFish/resGO/")
 table(moduleColors)
-getwd()
+
+# in R make a loop-
+#   
+# black.df <- read.table("LocusLinkIDs-black.txt")
+# resGO.black <- enrichGO(gene = black.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
+# resGO.black.dotplot <-  dotplot(resGO.black)
+# r1 <- as.character(resGO.black$Description)
+# resKEGG.black <- enrichKEGG(gene = black.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
+# resKEGG.black.dotplot <- dotplot(resKEGG.black, showCategory = 10)
+# 
+# 
+# do it for all the names in list_names
+# list_names <- unique(moduleColors)
+# "grey"          "blue"          "magenta"       "red"           "turquoise"     "midnightblue" 
+#  "cyan"                  "purple"        "pink"          "lightyellow"   "darkgreen"    
+#  "brown"         "green"         "darkturquoise" "darkred"       "yellow"        "greenyellow"  
+# "lightcyan"     "salmon"        "tan"           "darkgrey"      "grey60"        "royalblue"    
+# "lightgreen" 
+# 
+# In R, make a loop for all the names in list_names and perform all the commands below by changing the names
+# black_df <- read.table("LocusLinkIDs-black.txt")
+# resGO_black <- enrichGO(gene = black_df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
+# resGO_black_dotplot <-  dotplot(resGO_black)
+# 
+# 
+# change the names of black.df, resGO.black, resGO.black.dotplot to list_names
+# 
+# 
+# r1 <- as.character(resGO.black$Description)
+# resKEGG.black <- enrichKEGG(gene = black.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
+# resKEGG.black.dotplot <- dotplot(resKEGG.black, showCategory = 10)
+
+
+
+
+
 
 black.df <- read.table("LocusLinkIDs-black.txt")
 blue.df <- read.table("LocusLinkIDs-blue.txt")
@@ -947,11 +984,7 @@ for(treatment in c("T1", "T2", "T3")){
     df <- rbind(df, c(sample_name,a))
   }
 }
-
-# Rename the columns
 names(df) <- c("Group", "a1", "a2", "a3")
-
-# View the dataframe
 df
 
 
