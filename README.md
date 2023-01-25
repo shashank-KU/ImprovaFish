@@ -40,6 +40,7 @@ Please follow the link for all the commands used for downstream analysis for [me
 ## Omics-Integration
 
 
+![Omics_Integration-1 2](https://user-images.githubusercontent.com/30895959/214545865-b85babd0-1f6a-4ba5-8fd9-8c039bdf5869.png)
 
 
 
