@@ -7,6 +7,7 @@
   - [Metaproteomics](#metaproteomics)
   - [Metabolomics](#metabolomics)
   - [Meta-metatranscriptomics](#meta-metatranscriptomics)
+  - [Omics-Integration](#omics-integration)
   - [Bugs](#bugs)
 
 # Feed-microbiome-host interactions in Atlantic salmon over life stages
@@ -36,6 +37,7 @@ Please follow the link for all the commands used for downstream analysis for [me
 
 ## Meta-metatranscriptomics
 
+## Omics-Integration
 
 
 
