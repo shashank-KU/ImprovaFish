@@ -594,12 +594,16 @@ for(treatment in c("T1", "T2", "T3")){
     df <- rbind(df, c(sample_name,a))
   }
 }
-
-# Rename the columns
 names(df) <- c("Group", "a1", "a2", "a3")
-
-# View the dataframe
 df
+
+
+
+
+
+
+
+
 
 
 

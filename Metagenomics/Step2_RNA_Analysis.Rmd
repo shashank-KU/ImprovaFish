@@ -58,6 +58,7 @@ library("formatR")
 ## Load data
 
 ```{r }
+setwd("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/Metagenomics")
 raw <- import_biom("/Users/shashankgupta/Desktop/ImprovAFish/exported-feature-table/feature-table_taxonomy.biom")
 tree <- read_tree("/Users/shashankgupta/Desktop/ImprovAFish/exported-feature-table/tree.nwk")
 refseq <- Biostrings::readDNAStringSet("/Users/shashankgupta/Desktop/ImprovAFish/exported-feature-table/dna-sequences.fasta", use.names = TRUE)
@@ -401,7 +402,8 @@ multiple_rarefy <- function(physeq, ntables=100, depth = min(rowSums(rawtab))*0.
 }
 ```
 
-## Inspect the number of reads per sample and compare to rarefaction curves
+## Rarefaction curves
+Inspect the number of reads per sample and compare to rarefaction curves
 ```{r}
 sample_data(psdata)$reads <- unlist(sample_sums(psdata))
 dat1 <- data.frame(sample_data(psdata))
