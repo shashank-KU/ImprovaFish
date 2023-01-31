@@ -48,6 +48,5 @@ For all the commands used for downstream analysis for [omics-integration](OmicsI
 ![Omics_Integration-1 2](https://user-images.githubusercontent.com/30895959/214545865-b85babd0-1f6a-4ba5-8fd9-8c039bdf5869.png)
 
 
-
 # Bugs
 To inform us of any bugs, please open a new issue or send an email to shashank.gupta@nmbu.no
