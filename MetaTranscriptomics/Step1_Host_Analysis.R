@@ -467,366 +467,52 @@ fileName = paste("LocusLinkIDs-all.txt", sep="");
 write.table(as.character(allLLIDs), file = fileName, row.names = FALSE, col.names = FALSE)
 
 
-#read a text file in R for all the unique names present in "moduleColors" and read the file with unique names. e.g.,
-
 setwd("../../ImprovAFish/resGO/")
 table(moduleColors)
-
-# in R make a loop-
-#   
-# black.df <- read.table("LocusLinkIDs-black.txt")
-# resGO.black <- enrichGO(gene = black.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-# resGO.black.dotplot <-  dotplot(resGO.black)
-# r1 <- as.character(resGO.black$Description)
-# resKEGG.black <- enrichKEGG(gene = black.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-# resKEGG.black.dotplot <- dotplot(resKEGG.black, showCategory = 10)
-# 
-# 
-# do it for all the names in list_names
-# list_names <- unique(moduleColors)
-# "grey"          "blue"          "magenta"       "red"           "turquoise"     "midnightblue" 
-#  "cyan"                  "purple"        "pink"          "lightyellow"   "darkgreen"    
-#  "brown"         "green"         "darkturquoise" "darkred"       "yellow"        "greenyellow"  
-# "lightcyan"     "salmon"        "tan"           "darkgrey"      "grey60"        "royalblue"    
-# "lightgreen" 
-# 
-# In R, make a loop for all the names in list_names and perform all the commands below by changing the names
-# black_df <- read.table("LocusLinkIDs-black.txt")
-# resGO_black <- enrichGO(gene = black_df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-# resGO_black_dotplot <-  dotplot(resGO_black)
-# 
-# 
-# change the names of black.df, resGO.black, resGO.black.dotplot to list_names
-# 
-# 
-# r1 <- as.character(resGO.black$Description)
-# resKEGG.black <- enrichKEGG(gene = black.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-# resKEGG.black.dotplot <- dotplot(resKEGG.black, showCategory = 10)
-
-
-
-
-
-
-black.df <- read.table("LocusLinkIDs-black.txt")
-blue.df <- read.table("LocusLinkIDs-blue.txt")
-brown.df <- read.table("LocusLinkIDs-brown.txt")
-cyan.df <- read.table("LocusLinkIDs-cyan.txt")
-darkgreen.df <- read.table("LocusLinkIDs-darkgreen.txt")
-darkgrey.df <- read.table("LocusLinkIDs-darkgrey.txt")
-darkmagenta.df <- read.table("LocusLinkIDs-darkmagenta.txt")
-darkolivegreen.df <- read.table("LocusLinkIDs-darkolivegreen.txt")
-darkorange.df <- read.table("LocusLinkIDs-darkorange.txt")
-darkred.df <- read.table("LocusLinkIDs-darkred.txt")
-darkturquoise.df <- read.table("LocusLinkIDs-darkturquoise.txt")
-green.df <- read.table("LocusLinkIDs-green.txt")
-greenyellow.df <- read.table("LocusLinkIDs-greenyellow.txt")
-grey60.df <- read.table("LocusLinkIDs-grey60.txt")
-lightcyan.df <- read.table("LocusLinkIDs-lightcyan.txt")
-lightgreen.df <- read.table("LocusLinkIDs-lightgreen.txt")
-lightyellow.df <- read.table("LocusLinkIDs-lightyellow.txt")
-magenta.df <- read.table("LocusLinkIDs-magenta.txt")
-#mediumpurple3.df <- read.table("LocusLinkIDs-mediumpurple3.txt")
-midnightblue.df <- read.table("LocusLinkIDs-midnightblue.txt")
-orange.df <- read.table("LocusLinkIDs-orange.txt")
-#orangered4.df <- read.table("LocusLinkIDs-orangered4.txt")
-paleturquoise.df <- read.table("LocusLinkIDs-paleturquoise.txt")
-pink.df <- read.table("LocusLinkIDs-pink.txt")
-#plum1.df <- read.table("LocusLinkIDs-plum1.txt")
-purple.df <- read.table("LocusLinkIDs-purple.txt")
-red.df <- read.table("LocusLinkIDs-red.txt")
-royalblue.df <- read.table("LocusLinkIDs-royalblue.txt")
-saddlebrown.df <- read.table("LocusLinkIDs-saddlebrown.txt")
-salmon.df <- read.table("LocusLinkIDs-salmon.txt")
-#sienna3.df <- read.table("LocusLinkIDs-sienna3.txt")
-skyblue.df <- read.table("LocusLinkIDs-skyblue.txt")
-#skyblue3.df <- read.table("LocusLinkIDs-skyblue3.txt")
-steelblue.df <- read.table("LocusLinkIDs-steelblue.txt")
-tan.df <- read.table("LocusLinkIDs-tan.txt")
-turquoise.df <- read.table("LocusLinkIDs-turquoise.txt")
-violet.df <- read.table("LocusLinkIDs-violet.txt")
-white.df <- read.table("LocusLinkIDs-white.txt")
-yellow.df <- read.table("LocusLinkIDs-yellow.txt")
-#yellowgreen.df <- read.table("LocusLinkIDs-yellowgreen.txt")
+list_names <- unique(moduleColors)
+#rm(list=ls(pattern="^res."))
+#rm(list=ls(pattern="*_resGO_dotplot"))
 
 all.df <- read.table("LocusLinkIDs-all.txt")
 all.df$V1 <- as.character(all.df$V1)
- 
-resGO.black <- enrichGO(gene = black.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-resGO.blue <- enrichGO(gene = blue.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-resGO.brown <- enrichGO(gene = brown.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-resGO.cyan <- enrichGO(gene = cyan.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-resGO.darkgreen <- enrichGO(gene = darkgreen.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-resGO.darkgrey <- enrichGO(gene = darkgrey.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-resGO.darkmagenta <- enrichGO(gene = darkmagenta.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-resGO.darkolivegreen <- enrichGO(gene = darkolivegreen.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-resGO.darkorange <- enrichGO(gene = darkorange.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-resGO.darkred <- enrichGO(gene = darkred.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-resGO.darkturquoise <- enrichGO(gene = darkturquoise.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-resGO.green <- enrichGO(gene = green.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-resGO.greenyellow <- enrichGO(gene = greenyellow.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-resGO.grey60 <- enrichGO(gene = grey60.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-resGO.lightcyan <- enrichGO(gene = lightcyan.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-resGO.lightgreen <- enrichGO(gene = lightgreen.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-resGO.lightyellow <- enrichGO(gene = lightyellow.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-resGO.magenta <- enrichGO(gene = magenta.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-#resGO.mediumpurple3 <- enrichGO(gene = mediumpurple3.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-resGO.midnightblue <- enrichGO(gene = midnightblue.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-resGO.orange <- enrichGO(gene = orange.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-resGO.orangered4 <- enrichGO(gene = orangered4.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-resGO.paleturquoise <- enrichGO(gene = paleturquoise.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-resGO.pink <- enrichGO(gene = pink.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-#resGO.plum1 <- enrichGO(gene = plum1.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-resGO.purple <- enrichGO(gene = purple.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-resGO.red <- enrichGO(gene = red.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-resGO.royalblue <- enrichGO(gene = royalblue.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-resGO.saddlebrown <- enrichGO(gene = saddlebrown.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-resGO.salmon <- enrichGO(gene = salmon.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-#resGO.sienna3 <- enrichGO(gene = sienna3.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-resGO.skyblue <- enrichGO(gene = skyblue.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-#resGO.skyblue3 <- enrichGO(gene = skyblue3.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-resGO.steelblue <- enrichGO(gene = steelblue.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-resGO.tan <- enrichGO(gene = tan.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-resGO.turquoise <- enrichGO(gene = turquoise.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-resGO.violet <- enrichGO(gene = violet.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-resGO.white <- enrichGO(gene = white.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-resGO.yellow <- enrichGO(gene = yellow.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
-#resGO.yellowgreen <- enrichGO(gene = yellowgreen.df$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05)
+for (i in list_names){
+  assign(paste(i,"_df", sep=""), read.table(paste0("LocusLinkIDs-",i,".txt")))
+  assign(paste("resGO_",i, sep=""), enrichGO(gene = get(paste0(i,"_df"))$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05))
+  assign(paste("resGO_dotplot_",i, sep=""), dotplot(get(paste0("resGO_",i))))
+  assign(paste("resKEGG_",i, sep=""), enrichKEGG(gene = get(paste0(i,"_df"))$V1, universe = all.df$V1,  organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05))
+  assign(paste("resKEGG_dotplot_",i, sep=""), dotplot(get(paste0("resKEGG_",i))))
+}
 
-#DT::datatable(dplyr::select(resGO.turquoise@result,-geneID),rownames = F)
-a1 <-  dotplot(resGO.black)
-a2 <- dotplot(resGO.blue, showCategory = 10 )
-a3 <- dotplot(resGO.brown, showCategory = 10 )
- dotplot(resGO.cyan, showCategory = 10 )
- dotplot(resGO.darkgreen, showCategory = 10 )
-a23 <- dotplot(resGO.darkgrey, showCategory = 10 )
- dotplot(resGO.darkmagenta, showCategory = 10 )
-a4 <- dotplot(resGO.darkolivegreen, showCategory = 10 )
-dotplot(resGO.darkorange, showCategory = 10 )
-a5 <- dotplot(resGO.darkred, showCategory = 10 )
- dotplot(resGO.darkturquoise, showCategory = 10 )
-a6 <- dotplot(resGO.green, showCategory = 10 )
-a7 <- dotplot(resGO.greenyellow, showCategory = 10 )
-a8 <- dotplot(resGO.grey60, showCategory = 10 )
-a9 <- dotplot(resGO.lightcyan, showCategory = 10 )
-a10 <- dotplot(resGO.lightgreen, showCategory = 10 )
-a11 <- dotplot(resGO.lightyellow, showCategory = 10 )
-a12 <- dotplot(resGO.magenta, showCategory = 10 )
- dotplot(resGO.mediumpurple3, showCategory = 10 )
-a13 <- dotplot(resGO.midnightblue, showCategory = 10 )
- dotplot(resGO.orange, showCategory = 10 )
-a14 <- dotplot(resGO.orangered4, showCategory = 10 )
- dotplot(resGO.paleturquoise, showCategory = 10 )
-a15 <- dotplot(resGO.pink, showCategory = 10 )
-a16 <- dotplot(resGO.plum1, showCategory = 10 )
-a17 <- dotplot(resGO.purple, showCategory = 10 )
- dotplot(resGO.red, showCategory = 10 )
- dotplot(resGO.royalblue, showCategory = 10 )
- dotplot(resGO.saddlebrown, showCategory = 10 )
- dotplot(resGO.salmon, showCategory = 10 )
- dotplot(resGO.sienna3, showCategory = 10 )
- dotplot(resGO.skyblue, showCategory = 10 )
- dotplot(resGO.skyblue3, showCategory = 10 )
-a18 <- dotplot(resGO.steelblue, showCategory = 10 )
-a19 <- dotplot(resGO.tan, showCategory = 10 )
-a20 <- dotplot(resGO.turquoise, showCategory = 10 )
- dotplot(resGO.violet, showCategory = 10 )
- dotplot(resGO.white, showCategory = 10 )
-a21 <- dotplot(resGO.yellow, showCategory = 10 )
-a22 <- dotplot(resGO.yellowgreen, showCategory = 10 )
+resGO_dot_plots <- ls(pattern="resGO_dotplot_*")
+resGO_dot_plots <- noquote(resGO_dot_plots)
 
-cowplot::plot_grid(a1, a2,a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, ncol=4, labels = "auto")
-cowplot::plot_grid(a13,a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, ncol=4, labels = "auto")
+resKEGG_dot_plots <- ls(pattern="resKEGG_dotplot_*")
 
-# Bubble chart
-library("tm")
-library("SnowballC")
-library("wordcloud")
-library("RColorBrewer")
+# in r make plots one by one and save it in a loop r from  resGO_dot_plots
+# resGO_dot_plots <- c(resGO_dotplot_black,  resGO_dotplot_blue)
+# pdf("resGO_dotplot_black.pdf")
+# resGO_dotplot_black
+# dev.off()
+# 
+# pdf("resGO_dotplot_blue.pdf")
+# resGO_dotplot_blue
+# dev.off()
+# 
+# 
+# # Create a for loop to run through the list of plots
+# for (i in resGO_dot_plots) {
+#   
+#   # Assign the current plot to the variable plot
+#   plot <- noquote(i)
+#   
+#   # Create the file name and save the plot as PDF
+#   filename <- paste0(i, ".pdf", sep = "")
+#   pdf(filename)
+#    
+#   
+# }
 
-r1 <- as.character(resGO.black$Description)
-r2 <- as.character(resGO.blue$Description)
-r3 <- as.character(resGO.brown$Description)
-r4 <- as.character(resGO.cyan$Description)
-r5 <- as.character(resGO.darkgreen$Description)
-r6 <- as.character(resGO.darkgrey$Description)
-r7 <- as.character(resGO.darkmagenta$Description)
-r8 <- as.character(resGO.darkolivegreen$Description)
-r9 <- as.character(resGO.darkorange$Description)
-r10 <- as.character(resGO.darkred$Description)
-r11 <- as.character(resGO.darkturquoise$Description)
-r12 <- as.character(resGO.green$Description)
-r13 <- as.character(resGO.greenyellow$Description)
-r15 <- as.character(resGO.grey60$Description)
-r16 <- as.character(resGO.lightcyan$Description)
-r17 <- as.character(resGO.lightgreen$Description)
-r18 <- as.character(resGO.lightyellow$Description)
-r19 <- as.character(resGO.magenta$Description)
-r20 <- as.character(resGO.mediumpurple3$Description)
-r21 <- as.character(resGO.midnightblue$Description)
-r22 <- as.character(resGO.orange$Description)
-r23 <- as.character(resGO.orangered4$Description)
-r24 <- as.character(resGO.paleturquoise$Description)
-r25 <- as.character(resGO.pink$Description)
-r26 <- as.character(resGO.plum1$Description)
-r27 <- as.character(resGO.purple$Description)
-r28 <- as.character(resGO.red$Description)
-r29 <- as.character(resGO.royalblue$Description)
-r30 <- as.character(resGO.saddlebrown$Description)
-r31 <- as.character(resGO.salmon$Description)
-r32 <- as.character(resGO.sienna3$Description)
-r33 <- as.character(resGO.skyblue$Description)
-r34 <- as.character(resGO.skyblue3$Description)
-r35 <- as.character(resGO.steelblue$Description)
-r36 <- as.character(resGO.tan$Description)
-r37 <- as.character(resGO.turquoise$Description)
-r38 <- as.character(resGO.violet$Description)
-r39 <- as.character(resGO.white$Description)
-r40 <- as.character(resGO.yellow$Description)
-r41 <- as.character(resGO.yellowgreen$Description)
-#http://www.sthda.com/english/wiki/text-mining-and-word-cloud-fundamentals-in-r-5-simple-steps-you-should-know
-full <- c(r1, r2, 	r3, 	r4, 	r5, 	r6, 	r7, 	r8, 	r9, 	r10, 	r11, 	r12, 	r13, 	r15, 	r16, 	r17, 	r18, 	r19, 	r20, 	r21, 	r22, 	r23, 	r24, 	r25, 	r26, 	r27, 	r28, 	r29, 	r30, 	r31, 	r32, 	r33, 	r34, 	r35, 	r36, 	r37, 	r38, 	r39, 	r40, 	r41)
-docs <- Corpus(VectorSource(full))
-dtm <- TermDocumentMatrix(docs)
-m <- as.matrix(dtm)
-v <- sort(rowSums(m),decreasing=TRUE)
-d <- data.frame(word = names(v),freq=v)
-head(d, 10)
-set.seed(12345)
-wordcloud(words = d$word, freq = d$freq, min.freq = 1,
-          max.words=200, random.order=FALSE, rot.per=0.35, 
-          colors=brewer.pal(8, "Dark2"))
-#https://www.presentermedia.com/customize?id=25632#
-
-
-#heatplot(resGO.turquoise, showCategory=30) # analyse overlap of categories
-#enrichplot::upsetplot(resGO.turquoise) # analyse overlap of categories
-goplot(resGO.turquoise) # GO terms hierarchy
-cnetplot(resGO.turquoise) # this shows the genes connected to the enriched KEGG terms
-edox <- setReadable(resGO.turquoise, OrgDb = SsalOrg)
-a14 <- cnetplot(resGO.turquoise)
-a15 <- cnetplot(edox, categorySize="pvalue", foldChange=turquoise.df$V1)
-a16 <- cnetplot(edox,  circular = T, colorEdge = TRUE) 
-cowplot::plot_grid(a14, a15, a16, ncol=3, labels=LETTERS[1:3], rel_widths=c(.8, .8,  1.2))
-
-
-
-resKEGG.black <- enrichKEGG(gene = black.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-resKEGG.blue <- enrichKEGG(gene = blue.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-resKEGG.brown <- enrichKEGG(gene = brown.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-resKEGG.cyan <- enrichKEGG(gene = cyan.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-resKEGG.darkgreen <- enrichKEGG(gene = darkgreen.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-resKEGG.darkgrey <- enrichKEGG(gene = darkgrey.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-resKEGG.darkmagenta <- enrichKEGG(gene = darkmagenta.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-resKEGG.darkolivegreen <- enrichKEGG(gene = darkolivegreen.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-resKEGG.darkorange <- enrichKEGG(gene = darkorange.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-resKEGG.darkred <- enrichKEGG(gene = darkred.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-resKEGG.darkturquoise <- enrichKEGG(gene = darkturquoise.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-resKEGG.green <- enrichKEGG(gene = green.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-resKEGG.greenyellow <- enrichKEGG(gene = greenyellow.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-resKEGG.grey60 <- enrichKEGG(gene = grey60.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-resKEGG.lightcyan <- enrichKEGG(gene = lightcyan.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-resKEGG.lightgreen <- enrichKEGG(gene = lightgreen.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-resKEGG.lightyellow <- enrichKEGG(gene = lightyellow.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-resKEGG.magenta <- enrichKEGG(gene = magenta.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-#resKEGG.mediumpurple3 <- enrichKEGG(gene = mediumpurple3.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-resKEGG.midnightblue <- enrichKEGG(gene = midnightblue.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-resKEGG.orange <- enrichKEGG(gene = orange.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-resKEGG.orangered4 <- enrichKEGG(gene = orangered4.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-resKEGG.paleturquoise <- enrichKEGG(gene = paleturquoise.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-resKEGG.pink <- enrichKEGG(gene = pink.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-#resKEGG.plum1 <- enrichKEGG(gene = plum1.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-resKEGG.purple <- enrichKEGG(gene = purple.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-resKEGG.red <- enrichKEGG(gene = red.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-resKEGG.royalblue <- enrichKEGG(gene = royalblue.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-resKEGG.saddlebrown <- enrichKEGG(gene = saddlebrown.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-resKEGG.salmon <- enrichKEGG(gene = salmon.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-#resKEGG.sienna3 <- enrichKEGG(gene = sienna3.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-resKEGG.skyblue <- enrichKEGG(gene = skyblue.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-#resKEGG.skyblue3 <- enrichKEGG(gene = skyblue3.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-resKEGG.steelblue <- enrichKEGG(gene = steelblue.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-resKEGG.tan <- enrichKEGG(gene = tan.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-resKEGG.turquoise <- enrichKEGG(gene = turquoise.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-resKEGG.violet <- enrichKEGG(gene = violet.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-resKEGG.white <- enrichKEGG(gene = white.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-resKEGG.yellow <- enrichKEGG(gene = yellow.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-#resKEGG.yellowgreen <- enrichKEGG(gene = yellowgreen.df$V1, universe = all.df$V1, organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05)
-
-
-#DT::datatable(dplyr::select(resKEGG.turquoise@result,-geneID),rownames = F)
-
-a24 <- dotplot(resKEGG.black, showCategory = 10)
-a25 <- dotplot(resKEGG.blue, showCategory = 10)
-a26 <- dotplot(resKEGG.brown, showCategory = 10)
- dotplot(resKEGG.cyan, showCategory = 10)
- dotplot(resKEGG.darkgreen, showCategory = 10)
- dotplot(resKEGG.darkgrey, showCategory = 10)
- dotplot(resKEGG.darkmagenta, showCategory = 10)
- dotplot(resKEGG.darkolivegreen, showCategory = 10)
-a27 <-  dotplot(resKEGG.darkorange, showCategory = 10)
- dotplot(resKEGG.darkred, showCategory = 10)
- dotplot(resKEGG.darkturquoise, showCategory = 10)
-a28 <- dotplot(resKEGG.green, showCategory = 10)
-a29 <- dotplot(resKEGG.greenyellow, showCategory = 10)
-a30 <- dotplot(resKEGG.grey60, showCategory = 10)
-a31 <- dotplot(resKEGG.lightcyan, showCategory = 10)
-a32 <- dotplot(resKEGG.lightgreen, showCategory = 10)
- dotplot(resKEGG.lightyellow, showCategory = 10)
-a33 <- dotplot(resKEGG.magenta, showCategory = 10)
- dotplot(resKEGG.mediumpurple3, showCategory = 10)
-a43 <- dotplot(resKEGG.midnightblue, showCategory = 10)
- dotplot(resKEGG.orange, showCategory = 10)
- dotplot(resKEGG.orangered4, showCategory = 10)
- dotplot(resKEGG.paleturquoise, showCategory = 10)
- dotplot(resKEGG.pink, showCategory = 10)
- dotplot(resKEGG.plum1, showCategory = 10)
-a35 <- dotplot(resKEGG.purple, showCategory = 10)
- dotplot(resKEGG.red, showCategory = 10)
-a44 <- dotplot(resKEGG.royalblue, showCategory = 10)
-dotplot(resKEGG.saddlebrown, showCategory = 10)
-a37 <- dotplot(resKEGG.salmon, showCategory = 10)
- dotplot(resKEGG.sienna3, showCategory = 10)
- dotplot(resKEGG.skyblue, showCategory = 10)
- dotplot(resKEGG.skyblue3, showCategory = 10)
- dotplot(resKEGG.steelblue, showCategory = 10)
-a38 <- dotplot(resKEGG.tan, showCategory = 10)
-a39 <- dotplot(resKEGG.turquoise, showCategory = 10)
- dotplot(resKEGG.violet, showCategory = 10)
-a40 <- dotplot(resKEGG.white, showCategory = 10)
-a41 <- dotplot(resKEGG.yellow, showCategory = 10)
-a42 <- dotplot(resKEGG.yellowgreen, showCategory = 10)
-
-cowplot::plot_grid(a24, a25,a26, a27, a28, a29, a30, a31, a32, a33, a35,  ncol=4, labels = "auto")
-cowplot::plot_grid(a37, a38, a39, a40, a41, a42, a43, a44, ncol=4, labels = "auto")
-
-
-#Turquoise modules: GO and KEGG
-aplot::plot_list(a20, a39, tag_levels='A')
-
-
-library(DOSE)
-library(enrichplot)
-resKEGG.turquoise <- pairwise_termsim(resKEGG.turquoise)
-emapplot(resKEGG.turquoise)
-
-
-edox <- setReadable(resKEGG.turquoise, OrgDb = SsalOrg)
-
-a50 <- cnetplot(edox, categorySize="pvalue")
-a51 <- cnetplot(edox, foldChange=turquoise.df$V1, circular = TRUE, colorEdge = TRUE) 
-cowplot::plot_grid(a50, a51, ncol=2, labels=LETTERS[1:2], rel_widths=c(.8, 1.4))
-
-edox2 <- pairwise_termsim(edox)
-treeplot(edox2)
-treeplot(edox2, hclust_method = "average")
-aplot::plot_list(a20, a39, tag_levels='A')
-
-
-
-
-##
 #Deseq2 analysis
-
 library(DESeq2)
 library(BiocParallel)
 
@@ -836,7 +522,8 @@ design(dds) <- ~ group-1
 dds <- DESeq(dds, parallel = T)
 resultsNames(dds)
 
-
+annot_function <- read_tsv("../../../Salmo_salar-GCA_905237065.2_gene_annotations.tsv")
+annot_function <- annot_function[, c("gene_id", "v2.gene_id.NCBI","v2.gene_name.ensembl", "v2.product" )]
 
 # T1
 res <- results(dds,
@@ -845,7 +532,12 @@ table(res$padj < 0.05)
 
 res_tbl <- as_tibble(res, rownames = "ENSEMBL") %>%
   filter(padj <0.05)%>%
-  arrange(padj) 
+  arrange(padj)
+
+res_tbl <- merge(res_tbl, annot_function, by.x = "ENSEMBL", by.y = "gene_id", all.x = TRUE )
+res_tbl %>% 
+  filter(log2FoldChange > 0) %>%
+  select(v2.product)
 
 length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
 length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
@@ -861,6 +553,10 @@ table(res$padj < 0.05)
 res_tbl <- as_tibble(res, rownames = "ENSEMBL") %>%
   filter(padj <0.05)%>%
   arrange(padj) 
+res_tbl <- merge(res_tbl, annot_function, by.x = "ENSEMBL", by.y = "gene_id", all.x = TRUE )
+res_tbl %>% 
+  filter(log2FoldChange > 0) %>%
+  select(v2.product)
 
 length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
 length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
@@ -875,6 +571,10 @@ table(res$padj < 0.05)
 res_tbl <- as_tibble(res, rownames = "ENSEMBL") %>%
   filter(padj <0.05)%>%
   arrange(padj) 
+res_tbl <- merge(res_tbl, annot_function, by.x = "ENSEMBL", by.y = "gene_id", all.x = TRUE )
+res_tbl %>% 
+  filter(log2FoldChange > 0) %>%
+  select(v2.product)
 
 length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
 length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
@@ -929,6 +629,11 @@ res_tbl <- as_tibble(res, rownames = "ENSEMBL") %>%
   filter(padj <0.05)%>%
   arrange(padj) 
 
+res_tbl <- merge(res_tbl, annot_function, by.x = "ENSEMBL", by.y = "gene_id", all.x = TRUE )
+res_tbl %>% 
+  filter(log2FoldChange > 0) %>%
+  select(v2.product)
+
 length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
 length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
 
@@ -941,6 +646,10 @@ table(res$padj < 0.05)
 res_tbl <- as_tibble(res, rownames = "ENSEMBL") %>%
   filter(padj <0.05)%>%
   arrange(padj) 
+res_tbl <- merge(res_tbl, annot_function, by.x = "ENSEMBL", by.y = "gene_id", all.x = TRUE )
+res_tbl %>% 
+  filter(log2FoldChange > 0) %>%
+  select(v2.product)
 
 length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
 length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
@@ -955,6 +664,10 @@ table(res$padj < 0.05)
 res_tbl <- as_tibble(res, rownames = "ENSEMBL") %>%
   filter(padj <0.05)%>%
   arrange(padj) 
+res_tbl <- merge(res_tbl, annot_function, by.x = "ENSEMBL", by.y = "gene_id", all.x = TRUE )
+res_tbl %>% 
+  filter(log2FoldChange > 0) %>%
+  select(v2.product)
 
 length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
 length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements

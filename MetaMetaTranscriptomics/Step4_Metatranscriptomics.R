@@ -440,6 +440,8 @@ design(dds) <- ~ group-1
 dds <- DESeq(dds, parallel = T)
 resultsNames(dds)
 
+annot_function_metatrans <- read_tsv("../../../metatranscriptomics/CountsKallistoQuantificationDeNovoSTxDRAM/Total.DRAM.STx.bac.k2.total.annotations.tsv")
+annot_function_metatrans <- annot_function_metatrans[, c("ID", "kegg_hit", "uniref_taxonomy","pfam_hits", "cazy_hits" )]
 
 
 # T1
@@ -450,6 +452,10 @@ table(res$padj < 0.05)
 res_tbl <- as_tibble(res, rownames = "ENSEMBL") %>%
   filter(padj <0.05)%>%
   arrange(padj) 
+res_tbl <- merge(res_tbl, annot_function_metatrans, by.x = "ENSEMBL", by.y = "ID", all.x = TRUE )
+res_tbl %>% 
+  filter(log2FoldChange > 0) %>%
+  select(pfam_hits, uniref_taxonomy)
 
 length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
 length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
@@ -465,6 +471,11 @@ table(res$padj < 0.05)
 res_tbl <- as_tibble(res, rownames = "ENSEMBL") %>%
   filter(padj <0.05)%>%
   arrange(padj) 
+res_tbl <- merge(res_tbl, annot_function_metatrans, by.x = "ENSEMBL", by.y = "ID", all.x = TRUE )
+res_tbl %>% 
+  filter(log2FoldChange > 0) %>%
+  select(pfam_hits, uniref_taxonomy)
+
 
 length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
 length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
@@ -479,6 +490,10 @@ table(res$padj < 0.05)
 res_tbl <- as_tibble(res, rownames = "ENSEMBL") %>%
   filter(padj <0.05)%>%
   arrange(padj) 
+res_tbl <- merge(res_tbl, annot_function_metatrans, by.x = "ENSEMBL", by.y = "ID", all.x = TRUE )
+res_tbl %>% 
+  filter(log2FoldChange > 0) %>%
+  select(pfam_hits, uniref_taxonomy)
 
 length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
 length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
@@ -493,6 +508,10 @@ table(res$padj < 0.05)
 res_tbl <- as_tibble(res, rownames = "ENSEMBL") %>%
   filter(padj <0.05)%>%
   arrange(padj) 
+res_tbl <- merge(res_tbl, annot_function_metatrans, by.x = "ENSEMBL", by.y = "ID", all.x = TRUE )
+res_tbl %>% 
+  filter(log2FoldChange > 0) %>%
+  select(pfam_hits, uniref_taxonomy)
 
 length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
 length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
@@ -509,6 +528,11 @@ res_tbl <- as_tibble(res, rownames = "ENSEMBL") %>%
   filter(padj <0.05)%>%
   arrange(padj) 
 
+res_tbl <- merge(res_tbl, annot_function_metatrans, by.x = "ENSEMBL", by.y = "ID", all.x = TRUE )
+res_tbl %>% 
+  filter(log2FoldChange > 0) %>%
+  select(pfam_hits, uniref_taxonomy)
+
 length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
 length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
 
@@ -522,6 +546,12 @@ table(res$padj < 0.05)
 res_tbl <- as_tibble(res, rownames = "ENSEMBL") %>%
   filter(padj <0.05)%>%
   arrange(padj) 
+res_tbl <- merge(res_tbl, annot_function_metatrans, by.x = "ENSEMBL", by.y = "ID", all.x = TRUE )
+res_tbl %>% 
+  filter(log2FoldChange > 0) %>%
+  select(pfam_hits, uniref_taxonomy)
+
+
 
 length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
 length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
@@ -535,6 +565,11 @@ table(res$padj < 0.05)
 res_tbl <- as_tibble(res, rownames = "ENSEMBL") %>%
   filter(padj <0.05)%>%
   arrange(padj) 
+res_tbl <- merge(res_tbl, annot_function_metatrans, by.x = "ENSEMBL", by.y = "ID", all.x = TRUE )
+res_tbl %>% 
+  filter(log2FoldChange > 0) %>%
+  select(pfam_hits, uniref_taxonomy)
+
 
 length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
 length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
@@ -547,7 +582,12 @@ table(res$padj < 0.05)
 
 res_tbl <- as_tibble(res, rownames = "ENSEMBL") %>%
   filter(padj <0.05)%>%
-  arrange(padj) 
+  arrange(padj)
+res_tbl <- merge(res_tbl, annot_function_metatrans, by.x = "ENSEMBL", by.y = "ID", all.x = TRUE )
+res_tbl %>% 
+  filter(log2FoldChange > 0) %>%
+  select(pfam_hits, uniref_taxonomy)
+
 
 length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
 length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
@@ -562,6 +602,11 @@ table(res$padj < 0.05)
 res_tbl <- as_tibble(res, rownames = "ENSEMBL") %>%
   filter(padj <0.05)%>%
   arrange(padj) 
+res_tbl <- merge(res_tbl, annot_function_metatrans, by.x = "ENSEMBL", by.y = "ID", all.x = TRUE )
+res_tbl %>% 
+  filter(log2FoldChange > 0) %>%
+  select(pfam_hits, uniref_taxonomy)
+
 
 length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
 length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
@@ -597,8 +642,36 @@ for(treatment in c("T1", "T2", "T3")){
 names(df) <- c("Group", "a1", "a2", "a3")
 df
 
+res <- results(dds,contrast = list("groupT3mn3","groupT3ctr")) %>%
+  as.data.frame %>%
+  add_rownames(var = "Genes") %>%
+  filter(padj < 0.05) %>%
+  arrange(padj)
 
+cat("DEGs: ", nrow(res))
+vsd <- vst(dds)
+library(stringi)
+p1 <- assay(vsd) %>%
+  as.data.frame %>%
+  add_rownames(var = "Genes") %>%
+  filter(Genes %in% res$Genes[1:23]) %>%
+  gather(Sample, Expression, -Genes) %>%
+  mutate(Treatment = stri_replace_all_regex(Sample, colnames(dds), dds$Treatment, vectorize=FALSE)) %>%
+  ggplot(aes(x = Treatment, y = Expression, color = Treatment)) +
+  geom_boxplot() + 
+  facet_grid(rows = vars(Genes)) + theme_bw()
 
+p2 <- assay(vsd) %>%
+  as.data.frame %>%
+  add_rownames(var = "Genes") %>%
+  filter(Genes %in% res$Genes[1:23]) %>%
+  gather(Sample, Expression, -Genes) %>%
+  mutate(TimePoint = stri_replace_all_regex(Sample, colnames(dds), dds$TimePoint, vectorize=FALSE)) %>%
+  ggplot(aes(x = TimePoint, y = Expression, color = TimePoint)) +
+  geom_boxplot() + 
+  facet_grid(rows = vars(Genes)) + theme_bw()
+
+cowplot::plot_grid(plotlist = list(p1,p2), ncol = 2)
 
 
 

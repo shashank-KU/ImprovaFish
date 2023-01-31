@@ -464,6 +464,7 @@ lef_out<-run_lefse(ps_MC1, group = "Diet", norm = "CPM",
 
 plot_ef_bar(lef_out)
 table(marker_table(lef_out)$enrich_group)
+data.frame(marker_table(lef_out))%>%  filter(enrich_group != "ctr") %>% select(feature) 
 
 res <- ldamarker(ps_MC1,group="Diet")
 plotLDA(res,group=c("mc1","ctr"),lda=0, padj = 0.05, fontsize.y = 6)
@@ -480,6 +481,7 @@ lef_out<-run_lefse(ps_MC2, group = "Diet", norm = "CPM",
 
 plot_ef_bar(lef_out)
 table(marker_table(lef_out)$enrich_group)
+data.frame(marker_table(lef_out))%>%  filter(enrich_group != "ctr") %>% select(feature) 
 
 res <- ldamarker(ps_MC2, group="Diet")
 plotLDA(res,group=c("mc2","ctr"), lda=0, padj = 0.05, fontsize.y = 6)
@@ -495,6 +497,7 @@ lef_out<-run_lefse(ps_MN3, group = "Diet", norm = "CPM",
 
 plot_ef_bar(lef_out)
 table(marker_table(lef_out)$enrich_group)
+data.frame(marker_table(lef_out))%>%  filter(enrich_group != "ctr") %>% select(feature) 
 
 res <- ldamarker(ps_MN3, group="Diet")
 plotLDA(res,group=c("mn3","ctr"), lda=0, padj = 0.05, fontsize.y = 6)
@@ -530,6 +533,12 @@ lef_out<-run_lefse(ps_MC2, group = "Diet", norm = "CPM",
 plot_ef_bar(lef_out)
 table(marker_table(lef_out)$enrich_group)
 
+data.frame(marker_table(lef_out)) %>%
+  filter(enrich_group != "ctr") %>%
+  select(feature) %>%
+  mutate(NEW = gsub("\\.\\.\\..*", "", feature))
+
+
 res <- ldamarker(ps_MC2, group="Diet")
 plotLDA(res,group=c("mc2","ctr"), lda=2, padj = 0.05, fontsize.y = 6)
 
@@ -545,7 +554,10 @@ lef_out<-run_lefse(ps_MN3, group = "Diet", norm = "CPM",
 
 plot_ef_bar(lef_out)
 table(marker_table(lef_out)$enrich_group)
-
+data.frame(marker_table(lef_out)) %>%
+  filter(enrich_group != "ctr") %>%
+  select(feature) %>%
+  mutate(NEW = gsub("\\.\\.\\..*", "", feature))
 
 res <- ldamarker(ps_MN3, group="Diet")
 plotLDA(res,group=c("mn3","ctr"), lda=2, padj = 0.05, fontsize.y = 6)

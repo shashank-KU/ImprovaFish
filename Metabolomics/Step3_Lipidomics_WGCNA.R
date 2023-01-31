@@ -464,6 +464,9 @@ lef_out<-run_lefse(ps_MC1, group = "New_Diet", norm = "CPM",
 plot_ef_bar(lef_out)
 table(marker_table(lef_out)$enrich_group)
 
+data.frame(marker_table(lef_out)) %>%
+  filter(enrich_group != "CTR") %>%
+  select(feature)
 res <- ldamarker(ps_MC1,group="New_Diet")
 plotLDA(res,group=c("MC1","CTR"),lda=0, padj = 0.05, fontsize.y = 6)
 
@@ -479,6 +482,11 @@ lef_out<-run_lefse(ps_MC2, group = "New_Diet", norm = "CPM",
 
 plot_ef_bar(lef_out)
 table(marker_table(lef_out)$enrich_group)
+data.frame(marker_table(lef_out)) %>%
+  filter(enrich_group != "CTR") %>%
+  select(feature)
+
+
 
 res <- ldamarker(ps_MC2, group="New_Diet")
 plotLDA(res,group=c("MC2","CTR"), lda=0, padj = 0.05, fontsize.y = 6)
@@ -494,6 +502,10 @@ lef_out<-run_lefse(ps_MN3, group = "New_Diet", norm = "CPM",
 
 plot_ef_bar(lef_out)
 table(marker_table(lef_out)$enrich_group)
+data.frame(marker_table(lef_out)) %>%
+  filter(enrich_group != "CTR") %>%
+  select(feature)
+
 
 res <- ldamarker(ps_MN3, group="New_Diet")
 plotLDA(res,group=c("MN3","CTR"), lda=0, padj = 0.05, fontsize.y = 6)
@@ -513,6 +525,10 @@ lef_out<-run_lefse(ps_MC1, group = "New_Diet", norm = "CPM",
 plot_ef_bar(lef_out)
 table(marker_table(lef_out)$enrich_group)
 
+data.frame(marker_table(lef_out)) %>%
+  filter(enrich_group != "CTR") %>%
+  select(feature)
+
 res <- ldamarker(ps_MC1,group="New_Diet")
 plotLDA(res,group=c("MC1","CTR"),lda=0, padj = 0.05, fontsize.y = 6)
 
@@ -528,6 +544,10 @@ lef_out<-run_lefse(ps_MC2, group = "New_Diet", norm = "CPM",
 
 plot_ef_bar(lef_out)
 table(marker_table(lef_out)$enrich_group)
+data.frame(marker_table(lef_out)) %>%
+  filter(enrich_group != "CTR") %>%
+  select(feature)
+
 
 res <- ldamarker(ps_MC2, group="New_Diet")
 plotLDA(res,group=c("MC2","CTR"), lda=2, padj = 0.05, fontsize.y = 6)
@@ -545,6 +565,9 @@ lef_out<-run_lefse(ps_MN3, group = "New_Diet", norm = "CPM",
 plot_ef_bar(lef_out)
 table(marker_table(lef_out)$enrich_group)
 
+data.frame(marker_table(lef_out)) %>%
+  filter(enrich_group != "CTR") %>%
+  select(feature)
 
 res <- ldamarker(ps_MN3, group="New_Diet")
 plotLDA(res,group=c("MN3","CTR"), lda=2, padj = 0.05, fontsize.y = 6)
