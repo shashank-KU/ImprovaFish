@@ -462,6 +462,7 @@ OTU = otu_table(raw, taxa_are_rows = TRUE)
 dat <- read.csv("/Users/shashankgupta/Desktop/ImprovAFish/Proteomics-meta/metadata_proteomics.csv")
 row.names(dat) <- dat$Samples
 dat$New_Diet <- toupper(dat$Diet)
+
 # Merge into one complete phyloseq object
 ps <- merge_phyloseq(otu_table(OTU), sample_data(dat))
 tt <- as.data.frame(row.names(Proteomics))
@@ -470,22 +471,24 @@ colnames(tt)[1] <- "Kingdom"
 tax_table(ps) <- as.matrix(tt)
 
 set.seed(12345)
-ps_MC1<-subset_samples(ps, Diet %in% c("CTR", "MC1"))
+ps_MC1<-subset_samples(ps, New_Diet %in% c("CTR", "MC1"))
 ps_MC1 <- prune_taxa(taxa_sums(ps_MC1) >0, ps_MC1)
-table(sample_data(ps_MC1)$Diet)
+table(sample_data(ps_MC1)$New_Diet)
 
 
-lef_out<-run_lefse(ps_MC1, group = "Diet", norm = "CPM", 
+lef_out<-run_lefse(ps_MC1, group = "New_Diet", norm = "CPM", 
                    kw_cutoff = 0.05, lda_cutoff = 1.75, taxa_rank = "none")
 
 
 plot_ef_bar(lef_out)
 table(marker_table(lef_out)$enrich_group)
-lef_out_MC1_CTR <- marker_table(lef_out)
-lef_out_MC1_CTR <- subset(lef_out_MC1_CTR, lef_out_MC1_CTR$enrich_group == "CTR")
-lef_out_MC1_CTR <- lef_out_MC1_CTR$feature
+data.frame(marker_table(lef_out)) %>%
+  filter(enrich_group != "CTR") %>%
+  select(feature) %>%
+  `rownames<-`( NULL )
 
-res <- ldamarker(ps_MC1, group="Diet")
+
+res <- ldamarker(ps_MC1, group="New_Diet")
 plotLDA(res,group=c("MC1","CTR"), lda=1.75, padj =  0.05, fontsize.y = 6)
 
 

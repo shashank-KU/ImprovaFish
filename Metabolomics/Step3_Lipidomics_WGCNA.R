@@ -1,15 +1,21 @@
 library("MetaboAnalystR")
-getwd()
-mSet<-InitDataObjects("conc", "mf", FALSE)
-mSet<-SetDesignType(mSet, "multi")
-mSet<-Read.TextDataTs(mSet, "../../Metabolomics/Lipidomics/Lipidomics Data/Lipidomics.csv", "colmf")
-mSet<-ReadMetaData(mSet, "../../Metabolomics/Lipidomics/Lipidomics Data/Metadata.csv")
-mSet<-SanityCheckData(mSet)
-mSet<-ReplaceMin(mSet)
-mSet<-SanityCheckMeta(mSet, 1)
-mSet<-SetDataTypeOfMeta(mSet)
-mSet<-PreparePrenormData(mSet)
-mSet<-Normalization(mSet, "MeanNorm", "SrNorm", "NULL", ratio=FALSE, ratioNum=20)
+
+
+# Load data objects
+mSet <- InitDataObjects("conc", "mf", FALSE)
+mSet <- SetDesignType(mSet, "multi")
+mSet <- Read.TextDataTs(mSet, "/Users/shashankgupta/Desktop/ImprovAFish/Metabolomics/Lipidomics/Lipidomics Data/Lipidomics.csv", "colmf")
+mSet <- ReadMetaData(mSet, "/Users/shashankgupta/Desktop/ImprovAFish/Metabolomics/Lipidomics/Lipidomics Data/Metadata.csv")
+
+# Check and replace missing values in the data
+mSet <- SanityCheckData(mSet)
+mSet <- ReplaceMin(mSet)
+mSet <- SanityCheckMeta(mSet, 1)
+mSet <- SetDataTypeOfMeta(mSet)
+mSet <- PreparePrenormData(mSet)
+
+# Normalize data
+mSet <- Normalization(mSet, "MeanNorm", "SrNorm", "NULL", ratio = FALSE, ratioNum = 20)
 Lipidomics <- data.frame(mSet$dataSet$norm)
 Lipidomics <- t(Lipidomics)
 
