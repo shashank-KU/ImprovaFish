@@ -190,66 +190,99 @@ cols  <- c(brewer.pal(8,"Set1"), brewer.pal(7,"Dark2"),brewer.pal(7,"Set2"),brew
 p <- p + theme_bw() +   scale_fill_manual(values =cols) + scale_colour_manual( values = cols)
 p
 
-#Raw data Observed richness
+
+# Load Required Libraries
 library(ggpubr)
+
+# Estimate richness of all.clean
 shannon.div <- estimate_richness(all.clean, measures = c("Shannon", "Simpson", "Observed","Chao1"))
+
+# Get sample data
 sampledata1<- data.frame(sample_data(all.clean))
+
+# Rename row names
 row.names(shannon.div) <- gsub("[.]","-", row.names(shannon.div))
+
+# Merge data
 sampleData <- merge(sampledata1, shannon.div, by = 0 , all = TRUE)
 
+# Factorize New_Diet
 sampleData$New_Diet <- factor(sampleData$New_Diet, levels=c('ext-ctrl', 'CTR', 'MC1', 'MC2', 'MN3'))
-levels(sampleData$New_Diet)
 
+# List of comparisons
 my_comparisons <- list( c("ext-ctrl", "MC1"), c("ext-ctrl", "MC2"), c("ext-ctrl", "MN3"),
                         c("CTR", "MC1"), c("CTR", "MC2"),
                         c("CTR", "MN3"))
+
+# Create Observed Richness Plot
 p1 <- ggboxplot(sampleData, x = "New_Diet", y = "Observed",
-          color = "New_Diet", palette = "jco", legend = "none")+ 
-  stat_compare_means(comparisons = my_comparisons)+ # Add pairwise comparisons p-value
+                color = "New_Diet", palette = "jco", legend = "none") + 
+  stat_compare_means(comparisons = my_comparisons) +
   stat_compare_means(label.y = 400) +
   geom_jitter(aes(colour = New_Diet), size = 2, alpha = 0.6) +
   geom_boxplot(aes(fill = New_Diet), width=0.7, alpha = 0.5) +
-  theme_bw() +  theme(legend.position="none",axis.title.x=element_blank())    +   scale_fill_manual(values =cols) + scale_colour_manual( values = cols)
+  theme_bw() +  theme(legend.position="none",axis.title.x=element_blank()) +  
+  scale_fill_manual(values = cols) + 
+  scale_colour_manual( values = cols)
 
+# Create Shannon Plot
 ggboxplot(sampleData, x = "New_Diet", y = "Shannon",
-          color = "New_Diet", palette = "jco", legend = "none")+ 
-  stat_compare_means(comparisons = my_comparisons)+ # Add pairwise comparisons p-value
+          color = "New_Diet", palette = "jco", legend = "none") + 
+  stat_compare_means(comparisons = my_comparisons) +
   stat_compare_means(label.y = 8) +
   geom_jitter(aes(colour = New_Diet), size = 2, alpha = 0.6) +
   geom_boxplot(aes(fill = New_Diet), width=0.7, alpha = 0.5) +
-  theme_bw() +  theme(legend.position="none",axis.title.x=element_blank())     # Add global p-value
+  theme_bw() +  theme(legend.position="none",axis.title.x=element_blank())
 
 
+# The code appears to be an analysis of microbial community data using the 
+# R packages phyloseq and ggplot2. The script performs a Principal Coordinate Analysis (PCoA) 
+# on the Bray-Curtis and weighted UniFrac distances between samples and visualizes the 
+# results as scatter plots colored by a categorical variable "New_Diet". The last line 
+# performs an analysis of variance (Adonis) on the Bray-Curtis distance matrix, with the
+# response variable being the "New_Diet". The results are shown as a scatter plot with 
+# ellipses representing 95% confidence intervals.
 
 set.seed(1)
+
+# Calculate PCoA on Bray distance
 PCoA_bray <- ordinate(physeq = all.clean, method = "PCoA", distance = "bray")
-PCoA_bray_plot<- plot_ordination(
+
+# Plot PCoA on Bray distance
+PCoA_bray_plot <- plot_ordination(
   physeq = all.clean, 
   ordination = PCoA_bray, 
   color = "New_Diet"
 ) + 
-  geom_point(shape = 19, alpha=0.7) + theme_bw() + ggtitle("PCoA Plot - Bray") + 
-  xlab("PCoA 1 [17.4 %]") + ylab("PCoA 2 [8.8 %]") + stat_ellipse()+   scale_fill_manual(values =cols) + scale_colour_manual( values = cols)
+  geom_point(shape = 19, alpha=0.7) + 
+  theme_bw() + ggtitle("PCoA Plot - Bray") + 
+  xlab("PCoA 1 [17.4 %]") + ylab("PCoA 2 [8.8 %]") + 
+  stat_ellipse() + scale_fill_manual(values =cols) + 
+  scale_colour_manual( values = cols)
 
-PCoA_bray_plot
-
+# Calculate PCoA on weighted unifrac distance
 PCoA_wunifrac <- ordinate(physeq = all.clean, method = "PCoA", distance = "wunifrac")
-PCoA_wunifrac_plot<- plot_ordination(
+
+# Plot PCoA on weighted unifrac distance
+PCoA_wunifrac_plot <- plot_ordination(
   physeq = all.clean, 
   ordination = PCoA_wunifrac, 
   color = "New_Diet"
 ) + 
-  geom_point(shape = 19, alpha=0.7) + theme_bw() + ggtitle("PCoA Plot - weighted unifrac") + 
-  xlab("PCoA 1 [68.2 %]") + ylab("PCoA 2 [8.3 %]") + stat_ellipse()+   scale_fill_manual(values =cols) + scale_colour_manual( values = cols)
+  geom_point(shape = 19, alpha=0.7) + 
+  theme_bw() + ggtitle("PCoA Plot - weighted unifrac") + 
+  xlab("PCoA 1 [68.2 %]") + ylab("PCoA 2 [8.3 %]") + 
+  stat_ellipse() + scale_fill_manual(values =cols) + 
+  scale_colour_manual( values = cols)
 
-PCoA_wunifrac_plot
+# Grid plot of PCoA plots
 bottom_row <- plot_grid(p1, PCoA_bray_plot, labels = c('B', 'C'), align = 'h', rel_widths = c(1, 1.3))
 plot_grid(p, bottom_row, labels = c('A', ''), ncol = 1, rel_heights = c(1, 1.2))
 
+# Run adonis test
 sampledf <- data.frame(sample_data(all.clean))
 bcdist <- phyloseq::distance(all.clean, method="bray",normalized=TRUE) 
-adonis2(bcdist ~ New_Diet, 
-        data = sampledf, permutations = 9999)
+adonis2(bcdist ~ New_Diet, data = sampledf, permutations = 9999)
 
 
 #Contamination removal
@@ -273,29 +306,35 @@ table(contamdf.prev05$contaminant)
 all.noncontam <- prune_taxa(!contamdf.prev05$contaminant, all.clean)
 all.noncontam
 
-
-set.seed(1)
+# Bray-Curtis PCoA after contamination removal
 PCoA_bray <- ordinate(physeq = all.noncontam, method = "PCoA", distance = "bray")
-PCoA_bray_plot<- plot_ordination(
+PCoA_bray_plot <- plot_ordination(
   physeq = all.noncontam, 
   ordination = PCoA_bray, 
   color = "New_Diet"
 ) + 
-  geom_point(shape = 19, alpha=0.7) + theme_bw() + ggtitle("PCoA Plot - Bray") + 
-  xlab("PCoA 1 [17.6 %]") + ylab("PCoA 2 [9 %]") + stat_ellipse()
+  geom_point(shape = 19, alpha = 0.7) + 
+  theme_bw() + 
+  ggtitle("PCoA Plot - Bray") + 
+  xlab("PCoA 1 [17.6 %]") + 
+  ylab("PCoA 2 [9 %]") + 
+  stat_ellipse()
 
-PCoA_bray_plot
 
+# Weighted UniFrac PCoA
 PCoA_wunifrac <- ordinate(physeq = all.noncontam, method = "PCoA", distance = "unifrac")
-PCoA_wunifrac_plot<- plot_ordination(
+PCoA_wunifrac_plot <- plot_ordination(
   physeq = all.noncontam, 
   ordination = PCoA_wunifrac, 
   color = "New_Diet"
 ) + 
-  geom_point(shape = 19, alpha=0.7) + theme_bw() + ggtitle("PCoA Plot - Bray") + 
-  xlab("PCoA 1 [3.3 %]") + ylab("PCoA 2 [2.3 %]") + stat_ellipse()
+  geom_point(shape = 19, alpha = 0.7) + 
+  theme_bw() + 
+  ggtitle("PCoA Plot - Weighted UniFrac") + 
+  xlab("PCoA 1 [3.3 %]") + 
+  ylab("PCoA 2 [2.3 %]") + 
+  stat_ellipse()
 
-PCoA_wunifrac_plot
 
 
 psdata <- subset_samples(all.noncontam, Sample_or_Control=="True_Sample")
@@ -365,26 +404,21 @@ Final.RNA_phylum_plot <- Final.RNA_phylum_plot + theme_bw() + theme(axis.text.x=
 Final.RNA_phylum_plot
 
 
-
-
-
 #Bacterial Community Composition for Manuscript
 Final.seq.melt.RNA <- psmelt(tax_glom(psdata.r, "Species"))
-length(unique(Final.seq.melt.RNA$Phylum))
-length(unique(Final.seq.melt.RNA$Class))
-length(unique(Final.seq.melt.RNA$Order))
-length(unique(Final.seq.melt.RNA$Family))
-length(unique(Final.seq.melt.RNA$Genus))
-length(unique(Final.seq.melt.RNA$Species))
+tax_ranks <- c("Phylum", "Class", "Order", "Family", "Genus", "Species")
+
+for (rank in tax_ranks) {
+  n_unique <- length(unique(Final.seq.melt.RNA[[rank]]))
+  message(paste(rank, ": ", n_unique, sep = ""))
+}
+
 
 table(grepl("Phylum", unique(Final.seq.melt.RNA$Class)))
 table(grepl("Class|Phylum", unique(Final.seq.melt.RNA$Order)))
 table(grepl("Order|Class|Phylum", unique(Final.seq.melt.RNA$Family)))
 table(grepl("Family|Order|Class|Phylum", unique(Final.seq.melt.RNA$Genus)))
 table(grepl("Family|Order|Class|Phylum|Genus", unique(Final.seq.melt.RNA$Species)))
-
-
-
 
 
 library(doBy)
@@ -394,7 +428,7 @@ Phylum_df <- summaryBy(Abundance~Phylum, data=Final.seq.melt.RNA, FUN=sum)
 Phylum_df$Percent <- round(Phylum_df$Abundance.sum/sum(Phylum_df$Abundance.sum)*100, 4)
 Phylum_df <- plyr::arrange(Phylum_df, plyr::desc(Percent))
 Phylum_df$PercentageRound <- round(Phylum_df$Percent, digits = 2)
-Phylum_df
+head(Phylum_df)
 
 
 # Final.psdata.r.RNA.class <- tax_glom(Final.RNA, "Class")
@@ -403,7 +437,7 @@ class_df <- summaryBy(Abundance~Phylum+Class, data=Final.seq.melt.RNA, FUN=sum)
 class_df$Percent <- round(class_df$Abundance.sum/sum(class_df$Abundance.sum)*100, 4)
 class_df <- plyr::arrange(class_df, plyr::desc(Percent))
 class_df$Round <- round(class_df$Percent, digits = 2)
-class_df
+head(class_df)
 
 
 # Final.psdata.r.RNA.order <- tax_glom(Final.RNA, "Order")
@@ -1111,14 +1145,19 @@ table(sample_data(phy_MC1)$New_Diet)
 lef_out1<-run_lefse(phy_MC1, group = "New_Diet", taxa_rank = "Genus", transform = "log10",
                    kw_cutoff = 0.05, lda_cutoff = 2, strict = "2")
 
+
+
 #plot_ef_bar(lef_out)
 
 a1 <- plot_abundance(lef_out1, group = "New_Diet")
-table(marker_table(lef_out)$enrich_group)
+table(marker_table(lef_out1)$enrich_group)
 #rabuplot(phy_MC1, predictor= "New_Diet",N_taxa = 25)
 
 #marker_1 <- microbiomeMarker::abundances(lef_out1)
-
+data.frame(marker_table(lef_out1)) %>%
+  filter(enrich_group != "CTR") %>%
+  select(feature) %>%
+  `rownames<-`( NULL )
 
 phy_MC2<-subset_samples(psdata, samplingTime %in% c("T1") & New_Diet %in% c("CTR", "MC2"))
 phy_MC2 <- prune_taxa(taxa_sums(phy_MC2) >0, phy_MC2)
@@ -1198,7 +1237,16 @@ plot_grid(metagenomicsT1MC1, metagenomicsT1MC2,
 
 
 
+phy_MC1<-subset_samples(psdata, samplingTime %in% c("T2") & New_Diet %in% c("CTR", "MC2"))
+phy_MC1 <- prune_taxa(taxa_sums(phy_MC1) >0, phy_MC1)
+lef_out1<-run_lefse(phy_MC1, group = "New_Diet", taxa_rank = "Genus", transform = "log10",
+                    kw_cutoff = 0.05, lda_cutoff = 2, strict = "2")
 
+table(marker_table(lef_out1)$enrich_group)
+data.frame(marker_table(lef_out1)) %>%
+  filter(enrich_group != "CTR") %>%
+  select(feature) %>%
+  `rownames<-`( NULL )
 
 
 
