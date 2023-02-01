@@ -17,31 +17,34 @@ prefix_OTUs <- "m"
 ################################################################################
 stage2results_X
 
-
-# Remove ME0 from analysis
-idx <- which(colnames(stage2results_X$modules$MEs) == "ME0")
-stage2results_X$modules$MEs <- stage2results_X$modules$MEs[,-idx]
-filter.sig.mod <- 2
-
-
-take_average <- TRUE
-
-if(take_average){
-  stage2results_X$modules$MEs %>% 
-    rownames_to_column(var = "common") %>%
-    mutate(common = sub("_[0-9]{1,2}$", "", common)) %>% 
-    group_by(common) %>% 
-    summarise_all(list(mean)) %>% 
-    ungroup() -> stage2results_X_eigengenes
+# Function to remove and average modules
+remove_and_average_MEs <- function(stage2results_X, take_average){
+  idx <- which(colnames(stage2results_X$modules$MEs) == "ME0")
+  stage2results_X$modules$MEs <- stage2results_X$modules$MEs[,-idx]
   
-  stage2results_X_eigengenes <- as.data.frame(stage2results_X_eigengenes)
+  if(take_average){
+    stage2results_X$modules$MEs %>% 
+      rownames_to_column(var = "common") %>%
+      mutate(common = sub("_[0-9]{1,2}$", "", common)) %>% 
+      group_by(common) %>% 
+      summarise_all(list(mean)) %>% 
+      ungroup() -> stage2results_X_eigengenes
+    
+    stage2results_X_eigengenes <- as.data.frame(stage2results_X_eigengenes)
+    
+  } else{
+    stage2results_X_eigengenes <- stage2results_X$modules$MEs
+  }
   
-} else{
-  stage2results_X_eigengenes <- stage2results_X$modules$MEs
+  rownames(stage2results_X_eigengenes) <- stage2results_X_eigengenes$common
+  stage2results_X_eigengenes$common <- NULL
+  
+  return(stage2results_X_eigengenes)
 }
 
-rownames(stage2results_X_eigengenes) <- stage2results_X_eigengenes$common
-stage2results_X_eigengenes$common <- NULL
+stage2results_X_eigengenes <- remove_and_average_MEs(stage2results_X = stage2results_X, take_average = T)
+
+
 
 # Create a dendrogram of the transcriptomics eigengenes to organise the final plots.
 X_ME_dendro <- hclust(as.dist(1 - WGCNA::bicor(stage2results_X_eigengenes, maxPOutliers = 0.05)), method = "ward.D2")
@@ -115,31 +118,12 @@ pheatmap::pheatmap(stage2results_X_eigengenes_to_plot,
 #stage2results_Y <- stage2results_Y_backup
 stage2results_Y   
 # Remove ME0 from analysis
-idx <- which(colnames(stage2results_Y$modules$MEs) == "ME0")
-stage2results_Y$modules$MEs <- stage2results_Y$modules$MEs[,-idx]
-
-take_average <- TRUE
-if(take_average){
-  stage2results_Y$modules$MEs %>% 
-    rownames_to_column(var = "common") %>% 
-    mutate(common = sub("_[0-9]{1,2}$", "", common)) %>% 
-    group_by(common) %>% 
-    summarise_all(list(mean)) %>% 
-    ungroup() -> stage2results_Y_eigengenes
-  
-  stage2results_Y_eigengenes <- as.data.frame(stage2results_Y_eigengenes)
-} else{
-  stage2results_Y_eigengenes <- stage2results_Y$modules$MEs
-}
-
-rownames(stage2results_Y_eigengenes) <- stage2results_Y_eigengenes$common
-stage2results_Y_eigengenes$common <- NULL
+stage2results_Y_eigengenes <- remove_and_average_MEs(stage2results_X = stage2results_Y, take_average = T)
 
 dim(stage2results_Y_eigengenes); dim(stage2results_X_eigengenes)
 
 
 #Correlate modules from transcriptomics and metagenomics.
-
 # Check that the samples are in the same order. 
 # If they are not in order, change their order to match; If they do not match one-to-one, call an error.
 same_order <- all(rownames(stage2results_Y_eigengenes) == rownames(stage2results_X_eigengenes))
