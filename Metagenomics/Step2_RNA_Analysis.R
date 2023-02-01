@@ -1164,6 +1164,7 @@ phy_MC2 <- prune_taxa(taxa_sums(phy_MC2) >0, phy_MC2)
 table(sample_data(phy_MC2)$New_Diet)
 lef_out2<-run_lefse(phy_MC2, group = "New_Diet", taxa_rank = "Genus", transform = "log10",
                    kw_cutoff = 0.05, lda_cutoff = 2, strict = "2")
+
 #plot_ef_bar(lef_out)
 a2 <- plot_abundance(lef_out2, group = "New_Diet")
 table(marker_table(lef_out2)$enrich_group)
@@ -1234,19 +1235,6 @@ plot_grid(metagenomicsT1MC1, metagenomicsT1MC2,
 
 
 
-
-
-
-phy_MC1<-subset_samples(psdata, samplingTime %in% c("T2") & New_Diet %in% c("CTR", "MC2"))
-phy_MC1 <- prune_taxa(taxa_sums(phy_MC1) >0, phy_MC1)
-lef_out1<-run_lefse(phy_MC1, group = "New_Diet", taxa_rank = "Genus", transform = "log10",
-                    kw_cutoff = 0.05, lda_cutoff = 2, strict = "2")
-
-table(marker_table(lef_out1)$enrich_group)
-data.frame(marker_table(lef_out1)) %>%
-  filter(enrich_group != "CTR") %>%
-  select(feature) %>%
-  `rownames<-`( NULL )
 
 
 
