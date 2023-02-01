@@ -11,12 +11,12 @@ row_cut <- 1
 prefix_genes <- "h"
 prefix_OTUs <- "m"
 
-
 #Transcriptomics
 #stage2results_X_backup <- stage2results_X
 #stage2results_X <- stage2results_X_backup
 ################################################################################
 stage2results_X
+
 
 # Remove ME0 from analysis
 idx <- which(colnames(stage2results_X$modules$MEs) == "ME0")
