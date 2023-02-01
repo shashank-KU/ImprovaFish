@@ -1234,7 +1234,25 @@ plot_grid(metagenomicsT1MC1, metagenomicsT1MC2,
 
 
 
-
+#Code for all time points and diets but ignoring "T1MN3"
+# Control
+for (i in c("T1","T2","T3")){
+  for (j in c("MC1","MC2", "MN3")){
+    if (i == "T1" & j == "MN3"){
+      next
+    } else {
+      phy<-subset_samples(psdata, samplingTime %in% c(i) & New_Diet %in% c("CTR", j))
+      phy <- prune_taxa(taxa_sums(phy) >0, phy)
+      lef_out<-run_lefse(phy, group = "New_Diet", taxa_rank = "Genus", transform = "log10",
+                         kw_cutoff = 0.05, lda_cutoff = 2, strict = "2")
+      assign(paste0("metagenomics", i, j), plot_abundance(lef_out, group = "New_Diet"))
+      output_table[i,j]<-sum(marker_table(lef_out)$enrich_group == "CTR")
+    }
+  }
+}
+colnames(output_table)<-c("MC1", "MC2", "MN3")
+rownames(output_table) <- c("T1","T2","T3")
+t(output_table)
 
 
 
