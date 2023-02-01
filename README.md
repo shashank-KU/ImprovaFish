@@ -49,4 +49,4 @@ For all the commands used for downstream analysis for [omics-integration](OmicsI
 
 
 # Bugs
-To inform us of any bugs, please open a new issue or send an email to shashank.gupta@nmbu.no
+To inform us of any bugs, please open a new issue or send us an email to shashank.gupta@nmbu.no
