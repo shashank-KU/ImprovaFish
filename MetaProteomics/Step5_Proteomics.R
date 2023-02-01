@@ -499,19 +499,21 @@ plotLDA(res,group=c("MC1","CTR"), lda=1.75, padj =  0.05, fontsize.y = 6)
 # marker_table(lef_out) <- t1
 
 
-ps_MC2<-subset_samples(ps, Diet %in% c("CTR", "MC2"))
+ps_MC2<-subset_samples(ps, New_Diet %in% c("CTR", "MC2"))
 ps_MC2 <- prune_taxa(taxa_sums(ps_MC2) >0, ps_MC2)
 table(sample_data(ps_MC2)$Diet)
 
 
-lef_out<-run_lefse(ps_MC2, group = "Diet", norm = "CPM", 
+lef_out<-run_lefse(ps_MC2, group = "New_Diet", norm = "CPM", 
                    kw_cutoff = 0.05, lda_cutoff = 1.75, taxa_rank = "none")
 
 plot_ef_bar(lef_out)
 table(marker_table(lef_out)$enrich_group)
-lef_out_MC2_CTR <- marker_table(lef_out)
-lef_out_MC2_CTR <- subset(lef_out_MC2_CTR, lef_out_MC2_CTR$enrich_group == "CTR")
-lef_out_MC2_CTR <- lef_out_MC2_CTR$feature
+data.frame(marker_table(lef_out)) %>%
+  filter(enrich_group != "CTR") %>%
+  select(feature) %>%
+  `rownames<-`( NULL )
+
 
 res <- ldamarker(ps_MC2, group="Diet")
 plotLDA(res,group=c("MC2","CTR"), lda=1.75, padj =  0.05, fontsize.y = 6)
@@ -527,13 +529,12 @@ lef_out<-run_lefse(ps_MN3, group = "New_Diet", norm = "CPM",
 
 plot_ef_bar(lef_out)
 table(marker_table(lef_out)$enrich_group)
+data.frame(marker_table(lef_out)) %>%
+  filter(enrich_group != "CTR") %>%
+  select(feature) %>%
+  `rownames<-`( NULL )
 
-lef_out_MN3_CTR <- marker_table(lef_out)
-lef_out_MN3_CTR <- subset(lef_out_MN3_CTR, lef_out_MN3_CTR$enrich_group == "CTR")
-lef_out_MN3_CTR <- lef_out_MN3_CTR$feature
 
-
-Reduce(intersect, list(lef_out_MC1_CTR,lef_out_MC2_CTR,lef_out_MN3_CTR))
 
 res <- ldamarker(ps_MN3, group="Diet")
 plotLDA(res,group=c("MN3","CTR"), lda=1.75, padj =  0.05, fontsize.y = 6)
@@ -558,7 +559,6 @@ output_table
 
 #plot_grid(pT1MC1, pT1MC2, pT1MN3, pT2MC1, pT2MC2, pT2MN3, pT3MC1, pT3MC2, p3MN3, labels = "AUTO", ncol = 1)
 plot_grid(poteomicsT3MC1, poteomicsT3MC2, poteomicsT3MN3, labels = "AUTO", ncol = 1, align = "hv")
-
 
 
 
