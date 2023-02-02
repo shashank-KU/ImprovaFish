@@ -24,6 +24,7 @@ To meet future food demands, more efficient and sustainable animal production sy
 
 ## Getting Started
 ### Step 1. Package dependencies
+To install the packages please look at [this](https://r-coder.com/install-r-packages/) link
 
 ```Package dependencies
 library("ranacapa")
