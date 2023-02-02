@@ -40,7 +40,7 @@ Finally, to install a package from its official website, download the package so
 ```
 install.packages("path/to/reshape2_package.tar.gz", repos = NULL, type = "source")
 ```
-It is recommended to regularly update the installed packages to ensure compatibility and to benefit from new features and bug fixes.
+It is recommended to regularly update the installed packages to ensure compatibility and to benefit from new features and bug fixes. We require several packages-
 
 ```Package dependencies
 library("ranacapa")
