@@ -29,18 +29,16 @@ Installing R packages can be done through various sources such as GitHub, the Co
 To install a package from GitHub, use the devtools package and the `install_github()` function. For example, to install the "ggplot2" package from GitHub, run the following code:
 ```
 library(devtools)
-install_github("ggplot2/ggplot2")
+install_github("ggplot2")
 ```
 To install a package from CRAN, use the `install.packages()` function. For example, to install the "dplyr" package from CRAN, run the following code:
 ```
 install.packages("dplyr")
-
 ```
 Finally, to install a package from its official website, download the package source code, and use the `install.packages()` function with the local file path as the argument. For example, to install the "reshape2" package from its official website, first download the source code, then run the following code:
 
 ```
 install.packages("path/to/reshape2_package.tar.gz", repos = NULL, type = "source")
-
 ```
 It is recommended to regularly update the installed packages to ensure compatibility and to benefit from new features and bug fixes.
 
