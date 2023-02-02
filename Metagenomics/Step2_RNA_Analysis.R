@@ -22,8 +22,8 @@ library("metagenomeSeq")
 library("decontam")
 library("RColorBrewer")
 library("ampvis2")
-
-
+library("microbiomeutilities")
+library("viridis")
 # Load data
 raw <- import_biom("/Users/shashankgupta/Desktop/ImprovAFish/exported-feature-table/feature-table_taxonomy.biom")
 tree <- read_tree("/Users/shashankgupta/Desktop/ImprovAFish/exported-feature-table/tree.nwk")
@@ -222,27 +222,9 @@ PCoA_bray_plot <- PCoA_bray_plot + annotate(
   col = "black", fontface = "bold")
 
 
-
-# Calculate PCoA on weighted unifrac distance
-PCoA_wunifrac <- ordinate(physeq = all.clean, method = "PCoA", distance = "wunifrac")
-
-# Plot PCoA on weighted unifrac distance
-PCoA_wunifrac_plot <- plot_ordination(
-  physeq = all.clean, 
-  ordination = PCoA_wunifrac, 
-  color = "New_Diet"
-) + 
-  geom_point(shape = 19, alpha=0.7) + 
-  theme_bw() + ggtitle("PCoA Plot - weighted unifrac") + 
-  xlab("PCoA 1 [68.2 %]") + ylab("PCoA 2 [8.3 %]") + 
-  stat_ellipse() + scale_fill_manual(values =cols) + 
-  scale_colour_manual( values = cols)
-
 # Grid plot of PCoA plots
 bottom_row <- plot_grid(p1, PCoA_bray_plot, labels = c('B', 'C'), align = 'h', rel_widths = c(1, 1.3))
 plot_grid(p, bottom_row, labels = c('A', ''), ncol = 1, rel_heights = c(1, 1.2))
-
-
 
 
 #Contamination removal
@@ -256,9 +238,6 @@ ggplot(data=df, aes(x=Index, y=LibrarySize, color=Sample_or_Control)) + geom_poi
 
 # Identify Contaminants - Prevalence
 sample_data(all.clean)$is.neg <- sample_data(all.clean)$Sample_or_Control == "Control_Sample"
-contamdf.prev <- isContaminant(all.clean, method="prevalence", neg="is.neg")
-table(contamdf.prev$contaminant)
-head(which(contamdf.prev$contaminant))
 
 #more aggressive classification threshold rather than the default. i.e., 0.05
 contamdf.prev05 <- isContaminant(all.clean, method="prevalence", neg="is.neg", threshold=0.5)
@@ -279,22 +258,6 @@ PCoA_bray_plot <- plot_ordination(
   xlab("PCoA 1 [17.6 %]") + 
   ylab("PCoA 2 [9 %]") + 
   stat_ellipse()
-
-
-# Weighted UniFrac PCoA
-PCoA_wunifrac <- ordinate(physeq = all.noncontam, method = "PCoA", distance = "unifrac")
-PCoA_wunifrac_plot <- plot_ordination(
-  physeq = all.noncontam, 
-  ordination = PCoA_wunifrac, 
-  color = "New_Diet"
-) + 
-  geom_point(shape = 19, alpha = 0.7) + 
-  theme_bw() + 
-  ggtitle("PCoA Plot - Weighted UniFrac") + 
-  xlab("PCoA 1 [3.3 %]") + 
-  ylab("PCoA 2 [2.3 %]") + 
-  stat_ellipse()
-
 
 
 psdata <- subset_samples(all.noncontam, Sample_or_Control=="True_Sample")
@@ -320,7 +283,7 @@ psdata.p <- prune_taxa(taxa_sums(psdata.p) >0, psdata.p)
 psdata.p
 
 # Rarefy the samples using the function multiple_rarefy
-psdata.r <- multiple_rarefy(psdata.p)
+#psdata.r <- multiple_rarefy(psdata.p)
 #psdata.r = rarefy_even_depth(psdata.p, rngseed=1, sample.size=0.9*min(sample_sums(psdata.p)), replace=F)
 #psdata.r = rarefy_even_depth(psdata.p)
 psdata.r<- transform_sample_counts(psdata.p, function(x) x / sum(x) )
@@ -331,9 +294,8 @@ rm(all)
 rm(all.clean)
 rm(all.noncontam)
 
-ggrare(psdata.p, step = 1000, color = "New_Diet", label = "samplingTime", se = FALSE)+ facet_wrap(~New_Diet)+ theme_bw()
+#ggrare(psdata.p, step = 1000, color = "New_Diet", label = "samplingTime", se = FALSE)+ facet_wrap(~New_Diet)+ theme_bw()
 
-#### 
 # Remove Time point T0
 psdata.r <- subset_samples(psdata.r, samplingTime != "T0")
 psdata.r <- prune_taxa(taxa_sums(psdata.r) > 0, psdata.r)
@@ -351,16 +313,15 @@ psdata.r
 
 #Final.RNA <- transform(psdata.r, "compositional")
 Final.RNA <- aggregate_rare(psdata.r, level = "Phylum", detection = 1/100, prevalence = 20/100)
-
-library(RColorBrewer)
 getPalette = colorRampPalette(brewer.pal(10, "Dark2")) 
 PhylaPalette = getPalette(10)
 
-
-
 Final.RNA_phylum_plot<- plot_composition(Final.RNA, sample.sort = "Proteobacteria",otu.sort = "abundance", verbose = TRUE)
-Final.RNA_phylum_plot <- Final.RNA_phylum_plot + theme_bw() + theme(axis.text.x=element_blank(),
-                                                                    axis.ticks.x=element_blank())+ scale_fill_manual(values = PhylaPalette)
+Final.RNA_phylum_plot <- Final.RNA_phylum_plot + 
+  theme_bw() + 
+  theme(axis.text.x=element_blank(), axis.ticks.x=element_blank()) +
+  scale_fill_manual(values = PhylaPalette)
+
 Final.RNA_phylum_plot
 
 
@@ -381,34 +342,23 @@ table(grepl("Family|Order|Class|Phylum", unique(Final.seq.melt.RNA$Genus)))
 table(grepl("Family|Order|Class|Phylum|Genus", unique(Final.seq.melt.RNA$Species)))
 
 
-library(doBy)
-# Final.psdata.r.RNA.phylum <- tax_glom(Final.RNA, "Phylum")
-# Final.psdata.r.RNA.phylum.psmelt <- psmelt(Final.psdata.r.RNA.phylum)
 Phylum_df <- summaryBy(Abundance~Phylum, data=Final.seq.melt.RNA, FUN=sum)
 Phylum_df$Percent <- round(Phylum_df$Abundance.sum/sum(Phylum_df$Abundance.sum)*100, 4)
 Phylum_df <- plyr::arrange(Phylum_df, plyr::desc(Percent))
 Phylum_df$PercentageRound <- round(Phylum_df$Percent, digits = 2)
 head(Phylum_df)
 
-
-# Final.psdata.r.RNA.class <- tax_glom(Final.RNA, "Class")
-# Final.psdata.r.RNA.class.psmelt <- psmelt(Final.psdata.r.RNA.class)
 class_df <- summaryBy(Abundance~Phylum+Class, data=Final.seq.melt.RNA, FUN=sum)
 class_df$Percent <- round(class_df$Abundance.sum/sum(class_df$Abundance.sum)*100, 4)
 class_df <- plyr::arrange(class_df, plyr::desc(Percent))
 class_df$Round <- round(class_df$Percent, digits = 2)
 head(class_df)
 
-
-# Final.psdata.r.RNA.order <- tax_glom(Final.RNA, "Order")
-# Final.psdata.r.RNA.order.psmelt <- psmelt(Final.psdata.r.RNA.order)
 order_df <- summaryBy(Abundance~Order, data=Final.seq.melt.RNA, FUN=sum)
 order_df$Percent <- round(order_df$Abundance.sum/sum(order_df$Abundance.sum)*100, 4)
 order_df <- plyr::arrange(order_df, plyr::desc(Percent))
 order_df
 
-# Final.psdata.r.RNA.genus <- tax_glom(Final.RNA, "Genus")
-# Final.psdata.r.RNA.genus.psmelt <- psmelt(Final.psdata.r.RNA.genus)
 genus_df <- summaryBy(Abundance~Genus, data=Final.seq.melt.RNA, FUN=sum)
 genus_df$Percent <- round(genus_df$Abundance.sum/sum(genus_df$Abundance.sum)*100, 4)
 genus_df <- plyr::arrange(genus_df, plyr::desc(Percent))
@@ -417,7 +367,6 @@ genus_df$Round <- round(genus_df$Percent, digits = 2)
 head(genus_df, n = 20)
 
 
-library(ggpubr)
 psdata1 <- subset_samples(psdata, samplingTime %in% c("T1", "T2", "T3"))
 psdata1 <- prune_taxa(taxa_sums(psdata1) > 0, psdata1)
 shannon.div <- estimate_richness(psdata1, measures = c("Shannon", "Observed"))
@@ -433,18 +382,22 @@ sampleData$samplingTime <- factor(sampleData$samplingTime, levels=c('T1', 'T2', 
 levels(sampleData$samplingTime)
 
 
-library(cowplot)
 
 my_comparisons <- list( c("CTR", "MC1"), c("CTR", "MC2"), c("CTR", "MN3"), 
                         c("MC1", "MC2"), c("MC1", "MN3"), c("MC2", "MN3") )
 
+
 p1 <- ggboxplot(sampleData, x = "New_Diet", y = "Shannon",
-                color = "New_Diet", palette = "jco", legend = "none")+ 
-  stat_compare_means(comparisons = my_comparisons)+ # Add pairwise comparisons p-value
+                color = "New_Diet", palette = "jco", legend = "none") + 
+  stat_compare_means(comparisons = my_comparisons) +
   stat_compare_means(label.y = 6.5) +
-  #geom_jitter(aes(colour = New_Diet), size = 2, alpha = 0.8) +
-  geom_boxplot(aes(fill = New_Diet), width=0.7, alpha = 0.5) + 
-  theme_bw() +  theme(legend.position="none",axis.title.x=element_blank()) + facet_wrap("samplingTime")
+  geom_jitter(aes(colour = New_Diet), size = 2, alpha = 0.6) +
+  geom_boxplot(aes(fill = New_Diet), width=0.7, alpha = 0.5) +
+  theme_bw() +  theme(legend.position="none",axis.title.x=element_blank()) +  
+  scale_fill_manual(values = cols) + 
+  scale_colour_manual( values = cols) + 
+  facet_wrap("samplingTime")
+
 
 
 #my_comparisons <- list( c("T0", "T1"), c("T0", "T2"), c("T0", "T3"), 
@@ -457,9 +410,13 @@ p4 <- ggboxplot(sampleData, x = "samplingTime", y = "Shannon",
                 color = "samplingTime", palette = "jco", legend = "none")+ 
   stat_compare_means(comparisons = my_comparisons)+ # Add pairwise comparisons p-value
   stat_compare_means(label.y = 5.5) +
-  #geom_jitter(aes(colour = samplingTime), size = 2, alpha = 0.8) +
+  geom_jitter(aes(colour = samplingTime), size = 2, alpha = 0.6) +
   geom_boxplot(aes(fill = samplingTime), width=0.7, alpha = 0.5) +
-  theme_bw() +  theme(legend.position="none",axis.title.x=element_blank()) + facet_wrap(. ~ New_Diet, ncol = 4)
+  theme_bw() +  
+  theme(legend.position="none",axis.title.x=element_blank()) +
+  scale_fill_manual(values = cols) + 
+  scale_colour_manual( values = cols) +
+  facet_wrap(. ~ New_Diet, ncol = 4)
 
 
 plot_grid(p4, p1, labels = c('A', 'B'), label_size = 12, ncol = 2)
@@ -469,119 +426,65 @@ plot_grid(p4, p1, labels = c('A', 'B'), label_size = 12, ncol = 2)
 
 #Beta Diversity Unifrac PCoA
 set.seed(1)
-PCoA_bray <- ordinate(physeq = psdata.r, method = "PCoA", distance = "unifrac")
+PCoA_bray <- ordinate(physeq = psdata.r, method = "PCoA", distance = "bray")
 p2 <- plot_ordination(
-  physeq = psdata.r,
+  physeq = psdata.r, 
   ordination = PCoA_bray, 
   color = "samplingTime"
 ) + 
-  geom_point(shape = 19, alpha=0.7) + theme_bw() + ggtitle("PCoA Plot - Unifrac") +
-  theme(plot.title = element_text(hjust = 0.5)) + 
+  geom_point(shape = 19, alpha=0.7) + 
+  theme_bw() + ggtitle("PCoA Plot - Bray") + 
   xlab("PCoA 1 [4.5 %]") + ylab("PCoA 2 [2.6 %]") + 
-  scale_color_manual(values = c("#0073c2cc", "#efc000cc", "#868686cc", "#cd534ccc")) + stat_ellipse()
+  stat_ellipse() + scale_fill_manual(values =cols) + 
+  scale_colour_manual( values = cols)
+# Run adonis test
+sampledf <- data.frame(sample_data(psdata.r))
+bcdist <- phyloseq::distance(psdata.r, method="bray",normalized=TRUE) 
+result <- adonis2(bcdist ~ samplingTime, data = sampledf, permutations = 9999)
+p2 <- p2 + annotate(
+  "text", x = -0.5, y = 0.32, 
+  label = paste("Adonis R2 =", round(result$R2[1], 3),
+                "\np-value =", result$`Pr(>F)`[1]),
+  col = "black", fontface = "bold")
 
-
-p2 
 
 
 
 set.seed(1)
-PCoA_bray <- ordinate(physeq = psdata.r, method = "PCoA", distance = "Unifrac")
+PCoA_bray <- ordinate(physeq = psdata.r, method = "PCoA", distance = "bray")
 p3 <- plot_ordination(
   physeq = psdata.r, 
   ordination = PCoA_bray, 
   color = "New_Diet"
 ) + 
-  geom_point(shape = 19, alpha=0.7) + theme_bw() + ggtitle("PCoA Plot - Unifrac")+
-  theme(plot.title = element_text(hjust = 0.5)) +
-  xlab("PCoA 1 [4.5%]") + ylab("PCoA 2 [2.6 %]")+ 
-  scale_color_manual(values = c("#0073c2cc", "#efc000cc", "#868686cc", "#cd534ccc")) + stat_ellipse()
-
-p3  
-
-
-p5 <- plot_grid(p1, p4, labels = c('A', 'B'), label_size = 12, ncol = 1, align = "h")
-
-p6 <- plot_grid(p3, p2, labels = c('C', 'D'), label_size = 12, ncol = 1, align = "hv")
-
-plot_grid(p5, p6, ncol = 2, rel_widths = c(1.5, 1))
-
-#Adonis
-library(vegan)
+  geom_point(shape = 19, alpha=0.7) + 
+  theme_bw() + ggtitle("PCoA Plot - Bray") + 
+  xlab("PCoA 1 [25.4 %]") + ylab("PCoA 2 [8.2 %]") + 
+  stat_ellipse() + scale_fill_manual(values =cols) + 
+  scale_colour_manual( values = cols)
+# Run adonis test
 sampledf <- data.frame(sample_data(psdata.r))
 bcdist <- phyloseq::distance(psdata.r, method="bray",normalized=TRUE) 
-adonis2(bcdist ~ samplingTime, 
-        data = sampledf, permutations = 9999)
-
-wudist <- phyloseq::distance(psdata.r, method="Unifrac",normalized=TRUE) 
-adonis2(wudist ~ samplingTime, 
-        data = sampledf, permutations = 9999)
-
-adonis2(wudist ~ New_Diet, 
-        data = sampledf, permutations = 9999)
-
-adonis2(wudist ~ New_Diet + samplingTime + samplingTank, 
-        data = sampledf, permutations = 9999)
+result <- adonis2(bcdist ~ New_Diet, data = sampledf, permutations = 9999)
+p3 <- p3 + annotate(
+  "text", x = -0.55, y = 0.32, 
+  label = paste("Adonis R2 =", round(result$R2[1], 3),
+                "\np-value =", result$`Pr(>F)`[1]),
+  col = "black", fontface = "bold")
 
 
 
-
-my_comparisons <- list( c("T0", "T1"), c("T0", "T2"), c("T0", "T3"), 
-                        c("T1", "T2"), c("T1", "T3"), c("T2", "T3") )
-ggboxplot(sampleData, x = "samplingTime", y = "Shannon",
-          color = "samplingTime", palette = "jco", legend = "none")+ 
-  stat_compare_means(comparisons = my_comparisons)+ # Add pairwise comparisons p-value
-  stat_compare_means(label.y = 6) +
-  geom_boxplot(aes(fill = samplingTime), width=0.7, alpha = 0.5) +
-  theme_bw() +  theme(legend.position="none",axis.title.x=element_blank())  + facet_grid(~New_Diet) 
-
-
-
-my_comparisons <- list( c("CTR", "MC1"), c("CTR", "MC2"), c("CTR", "MN3"), 
-                        c("MC1", "MC2"), c("MC1", "MN3"), c("MC2", "MN3") )
-ggboxplot(sampleData, x = "New_Diet", y = "Observed",
-          color = "New_Diet", palette = "jco", legend = "none")+ 
-  stat_compare_means(comparisons = my_comparisons)+ # Add pairwise comparisons p-value
-  stat_compare_means(label.y = 350) + #geom_jitter(aes(colour = New_Diet), size = 3, alpha = 0.8) + 
-  geom_boxplot(aes(fill = New_Diet), width=0.7, alpha = 0.5) +
-  theme_bw() +  theme(legend.position="none",axis.title.x=element_blank())  + facet_grid(~samplingTime) 
-
-new_df=sampleData[!grepl("CTR",sampleData$sampleDiet),]
-my_comparisons <- list(c("MC1", "MC2"), c("MC1", "MN3"), c("MC2", "MN3") )
-
-ggboxplot(new_df, x = "New_Diet", y = "Shannon",
-          color = "New_Diet", palette = "jco", legend = "none")+ 
-  stat_compare_means(comparisons = my_comparisons)+ # Add pairwise comparisons p-value
-  stat_compare_means(label.y = 5.5) +
-  geom_boxplot(aes(fill = New_Diet), width=0.7, alpha = 0.5) +
-  theme_bw() +  theme(legend.position="none",axis.title.x=element_blank())  + facet_grid(~samplingTime) 
-
-
-my_comparisons <- list(  c("T1", "T2"), c("T1", "T3"), c("T2", "T3") )
-ggboxplot(new_df, x = "samplingTime", y = "Shannon",
-          color = "samplingTime", palette = "jco", legend = "none")+ 
-  stat_compare_means(comparisons = my_comparisons)+ # Add pairwise comparisons p-value
-  stat_compare_means(label.y = 5.5) +
-  geom_boxplot(aes(fill = samplingTime), width=0.7, alpha = 0.5) +
-  theme_bw() +  theme(legend.position="none",axis.title.x=element_blank())  + facet_grid(~New_Diet) 
-
-
-library(microbiomeutilities)
-library(viridis)
-library(RColorBrewer)
-
-
-heat.sample <- plot_taxa_heatmap(psdata.r,
-                                 subset.top = 50,
-                                 VariableA = "New_Diet",
-                                 heatcolors = colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100),
-                                 transformation = "log10")
+p5 <- plot_grid(p1, p4, labels = c('A', 'B'), label_size = 12, ncol = 1, align = "hv")
+p6 <- plot_grid(p3, p2, labels = c('C', 'D'), label_size = 12, ncol = 1, align = "hv")
+plot_grid(p5, p6, ncol = 2, rel_widths = c(1.5, 1))
 
 
 
 
+
+
+# Heatmap to summarize taxonomy at different time points
 ampvis2_obj <- phyloseq_to_ampvis2(psdata.r)
-
 amp_heatmap(ampvis2_obj,
             group_by = "New_Diet",
             facet_by = "samplingTime",
@@ -655,56 +558,38 @@ theme_set(theme_classic())
 theme_update(plot.title = element_text(hjust = 0.5))
 theme_update(plot.title = element_text(face="bold"))
 
-gut_16SrRNA_mapping_file <- sample_data(psdata.p)
-omics_data <- otu_table(psdata.p)
+
+
+
 # host_gut_mapping_file <- read.table("../host_data/host_gut_mapping.txt", sep = "\t", row.names = 1, header = T)
 # host_gut_rawCounts_total1 <- read.table("../host_data/host_gut_count.txt")
 
-host_gut_mapping_file <- sample_info
 host_gut_rawCounts_total1 <- omics_data_host
-
+gut_16SrRNA_mapping_file <- sample_data(psdata.p)
 gut_16SrRNA_mapping_file$New_Diet <- tolower(gut_16SrRNA_mapping_file$New_Diet)
-gut_16SrRNA_mapping_file$ID_New <- paste(gut_16SrRNA_mapping_file$samplingTime, "_",
+gut_16SrRNA_mapping_file$ID_New <- paste(gut_16SrRNA_mapping_file$samplingTime, "_", 
                                          gut_16SrRNA_mapping_file$New_Diet, "_", 
                                          gut_16SrRNA_mapping_file$samplingTank, "_", "0",
                                          gut_16SrRNA_mapping_file$sampleNumber, 
                                          sep = "")
 
-
-#gut_16SrRNA_mapping_file$ID_New <- gsub("[-]","_", gut_16SrRNA_mapping_file$sampleName)
-#gut_16SrRNA_mapping_file$ID_New <- gsub("_HGm","_", gut_16SrRNA_mapping_file$ID_New)
-
-
-# host_gut_mapping_file$sampleName <- row.names(host_gut_mapping_file)
-# host_gut_mapping_file$common <- host_gut_mapping_file$sampleName
-# host_gut_mapping_file$common <- gsub("_HGh","_", host_gut_mapping_file$common)
-
-
-table(gut_16SrRNA_mapping_file$ID_New %in% host_gut_mapping_file$ID_New)
-table(host_gut_mapping_file$ID_New %in% gut_16SrRNA_mapping_file$ID_New)
-
+host_gut_mapping_file <- sample_info
 host_gut_mapping_file <- host_gut_mapping_file[host_gut_mapping_file$ID_New %in% gut_16SrRNA_mapping_file$ID_New, ]
 gut_16SrRNA_mapping_file <- gut_16SrRNA_mapping_file[gut_16SrRNA_mapping_file$ID_New %in% host_gut_mapping_file$ID_New, ]
-
 
 gut_16SrRNA_mapping_file$rownames <- row.names(gut_16SrRNA_mapping_file)
 row.names(gut_16SrRNA_mapping_file) <- gut_16SrRNA_mapping_file$ID_New
 
-
-
+omics_data <- otu_table(psdata.p)
 ID_New_name_list <-  gut_16SrRNA_mapping_file$rownames
 gut_16SrRNA_OTU_table <- omics_data[, colnames(omics_data) %in% ID_New_name_list]
-
 table(colnames(gut_16SrRNA_OTU_table) ==  gut_16SrRNA_mapping_file$rownames)
 colnames(gut_16SrRNA_OTU_table) <- gut_16SrRNA_mapping_file$ID_New
 table(colnames(gut_16SrRNA_OTU_table) ==  gut_16SrRNA_mapping_file$ID_New)
-
 omics_data <- gut_16SrRNA_OTU_table
 
-####################################################################################################
-####################################################################################################
-#Step 1
 
+# WGCNA downstream analysis
 dim(omics_data)
 omics_data <- t(omics_data)
 dim(omics_data) %>% paste(c( "Samples", "OTUs"))
@@ -745,8 +630,8 @@ if(is.infinite(idx)){
 data.frame(Indices = sft$fitIndices[,1],
            sfApprox = -sign(sft$fitIndices[,3])*sft$fitIndices[,2]) %>% 
   ggplot() + 
-  geom_hline(yintercept = 0.9, color = "red", alpha = 0.6) + # corresponds to R^2 cut-off of 0.9
-  geom_hline(yintercept = 0.8, color = "red", alpha = 0.2) + # corresponds to R^2 cut-off of 0.8
+  geom_hline(yintercept = 0.9, color = "black", alpha = 0.6) + # corresponds to R^2 cut-off of 0.9
+  geom_hline(yintercept = 0.8, color = "black", alpha = 0.2) + # corresponds to R^2 cut-off of 0.8
   geom_line(aes(x = Indices, y = sfApprox), color = "red", alpha = 0.1, size = 2.5) +
   geom_text(mapping = aes(x = Indices, y = sfApprox, label = Indices), color = "red", size = 4) +
   ggtitle("Scale independence") +
@@ -783,9 +668,6 @@ data.frame(Indices = sft$fitIndices[,1],
 cowplot::plot_grid(scale_independence_plot, mean_connectivity_plot, ncol = 2, align = "h", labels = c("A", "B"), label_size = plot_labeling_size) -> si_mc_plot
 
 si_mc_plot
-
-
-
 
 
 allowWGCNAThreads()
