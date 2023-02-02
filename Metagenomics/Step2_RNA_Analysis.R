@@ -131,68 +131,20 @@ all.clean <- prune_taxa(taxa_sums(all.clean) > 0, all.clean)
 all.clean
 
 # Rarefaction plot
-p <- ggrare(all.clean, step = 1000, color = "New_Diet", label = "samplingTime", se = FALSE)
-p + facet_wrap(~New_Diet)+ theme_bw()
-
-# Supplementary figures
-# Enter variables for calculating rarefaction curves
-psdata <- all.clean  # The phyloseq object containing the data
-measures <- c("Observed", "Shannon") #Which measures should the rarefaction curves be calculated for (phyloseq naming)
-depths <- rep(c(1, 100, c(1, 2, 3, 4, 5, 7.5, 10, 12.5, 15)*1000), each = 2)  #Which depths should be included
-variables <- c("samplingTime", "New_Diet") #First variable for colour, second for faceting
-
-# this enables automatic addition of the Depth to the output by ldply
-names(depths) <- depths 
-
-#This step runs the estimate rarefied richness function on the samples at all values in depth
-rarefaction_curve_data <- ldply(depths, estimate_rarified_richness, psdata = psdata, measures = measures, .id = 'Depth', .progress = ifelse(interactive(), 'text', 'none')) 
-
-# convert Depth from factor to numeric
-rarefaction_curve_data$Depth <- as.numeric(as.character(rarefaction_curve_data$Depth))
-rarefaction_curve_data$Sample <- as.character(rarefaction_curve_data$Sample)
-rarefaction_curve_data$Sample <- gsub('\\.', '-', rarefaction_curve_data$Sample)
-
-#Add sample data
-rarefaction_curve_verbose <- merge(rarefaction_curve_data, data.frame(sample_data(psdata)), by.x = 'Sample', by.y = 'row.names')
-
-#Summarize alpha diversity
-rarefaction_curve_data_summary <- ddply(rarefaction_curve_verbose, c("Depth", variables, "Measure"), 
-                                        summarise, Alpha_diversity_mean = mean(Alpha_diversity), 
-                                        Alpha_diversity_sd = sd(Alpha_diversity),
-                                        Alpha_diversity_sem = sd(Alpha_diversity)/sqrt(length(Alpha_diversity)))
-
-#Create plot
-if (length(variables) == 2){
-  p = ggplot( data = rarefaction_curve_data_summary, 
-              mapping = aes( x = Depth, y = Alpha_diversity_mean, 
-                             ymin = Alpha_diversity_mean - Alpha_diversity_sd, 
-                             ymax = Alpha_diversity_mean + Alpha_diversity_sd, colour = get(variables[1]), group = get(variables[1]))) + 
-    geom_line() + geom_errorbar(width = 750) + 
-    facet_grid(facets = Measure ~ get(variables[2]), scales = 'free_y') +
-    ylab("Alpha diversity (mean)") + 
-    labs(colour = variables[1]) +
-    xlab("Number of reads") 
-} else if (length(variables == 1)){
-  p = ggplot( data = rarefaction_curve_data_summary, 
-              mapping = aes( x = Depth, y = Alpha_diversity_mean, 
-                             ymin = Alpha_diversity_mean - Alpha_diversity_sd, 
-                             ymax = Alpha_diversity_mean + Alpha_diversity_sd, colour = get(variables[1]), group = get(variables[1]))) + 
-    geom_line() + geom_errorbar(width = 750) + 
-    ylab("Alpha diversity (mean)") + 
-    labs(colour = variables[1]) +
-    xlab("Number of reads") 
-}
-
-library(RColorBrewer)
+p <- ggrare(all.clean, step = 1000, 
+            color = "New_Diet", 
+            label = "samplingTime", se = TRUE,
+            parallel = TRUE,
+            plot = FALSE)
 cols  <- c(brewer.pal(8,"Set1"), brewer.pal(7,"Dark2"),brewer.pal(7,"Set2"),brewer.pal(12,"Set3"),brewer.pal(7,"Accent"),brewer.pal(12,"Paired"),"gray")
 
-# Plot and remember to save
-p <- p + theme_bw() +   scale_fill_manual(values =cols) + scale_colour_manual( values = cols)
+p <- p + theme_bw() + 
+  scale_fill_manual(values =cols) +
+  scale_colour_manual( values = cols) +
+  facet_wrap(~New_Diet)
 p
 
 
-# Load Required Libraries
-library(ggpubr)
 
 # Estimate richness of all.clean
 shannon.div <- estimate_richness(all.clean, measures = c("Shannon", "Simpson", "Observed","Chao1"))
@@ -207,7 +159,7 @@ row.names(shannon.div) <- gsub("[.]","-", row.names(shannon.div))
 sampleData <- merge(sampledata1, shannon.div, by = 0 , all = TRUE)
 
 # Factorize New_Diet
-sampleData$New_Diet <- factor(sampleData$New_Diet, levels=c('ext-ctrl', 'CTR', 'MC1', 'MC2', 'MN3'))
+sampleData$New_Diet <- factor(sampleData$New_Diet, levels=c( 'CTR', 'ext-ctrl', 'MC1', 'MC2', 'MN3'))
 
 # List of comparisons
 my_comparisons <- list( c("ext-ctrl", "MC1"), c("ext-ctrl", "MC2"), c("ext-ctrl", "MN3"),
@@ -259,6 +211,17 @@ PCoA_bray_plot <- plot_ordination(
   xlab("PCoA 1 [17.4 %]") + ylab("PCoA 2 [8.8 %]") + 
   stat_ellipse() + scale_fill_manual(values =cols) + 
   scale_colour_manual( values = cols)
+# Run adonis test
+sampledf <- data.frame(sample_data(all.clean))
+bcdist <- phyloseq::distance(all.clean, method="bray",normalized=TRUE) 
+result <- adonis2(bcdist ~ New_Diet, data = sampledf, permutations = 9999)
+PCoA_bray_plot <- PCoA_bray_plot + annotate(
+  "text", x = 0.5, y = 0.3, 
+  label = paste("Adonis R2 =", round(result$R2[1], 3),
+                "\np-value =", result$`Pr(>F)`[1]),
+  col = "black", fontface = "bold")
+
+
 
 # Calculate PCoA on weighted unifrac distance
 PCoA_wunifrac <- ordinate(physeq = all.clean, method = "PCoA", distance = "wunifrac")
@@ -279,10 +242,7 @@ PCoA_wunifrac_plot <- plot_ordination(
 bottom_row <- plot_grid(p1, PCoA_bray_plot, labels = c('B', 'C'), align = 'h', rel_widths = c(1, 1.3))
 plot_grid(p, bottom_row, labels = c('A', ''), ncol = 1, rel_heights = c(1, 1.2))
 
-# Run adonis test
-sampledf <- data.frame(sample_data(all.clean))
-bcdist <- phyloseq::distance(all.clean, method="bray",normalized=TRUE) 
-adonis2(bcdist ~ New_Diet, data = sampledf, permutations = 9999)
+
 
 
 #Contamination removal
@@ -454,7 +414,7 @@ genus_df$Percent <- round(genus_df$Abundance.sum/sum(genus_df$Abundance.sum)*100
 genus_df <- plyr::arrange(genus_df, plyr::desc(Percent))
 genus_df$Round <- round(genus_df$Percent, digits = 2)
 
-View(genus_df)
+head(genus_df, n = 20)
 
 
 library(ggpubr)
