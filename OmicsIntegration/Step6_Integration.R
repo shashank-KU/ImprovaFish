@@ -226,81 +226,50 @@ pheatmap::pheatmap(Y_corr_X$correlation,
                    labels_col = paste0(colnames(Y_corr_X$correlation)),
                    main = "Eigen ASVs") -> Y_corr_X_plot
 
+out = binarizeCategoricalVariable(Z_traits,
+                                  includePairwise = FALSE,
+                                  includeLevelVsAll = TRUE)
 
 
+#Z_traits_backup <- Z_traits
 #Correlate transcriptomics with traits
-# simplify by chosing only the columns we need.
-common <- sample_info$ID_New
+
 sample_info <- as_tibble(sample_info)
-sample_info %>% dplyr::select(ID_New, Time, New_Diet) -> Z_traits
-head(Z_traits)
+Z_traits <- sample_info %>% dplyr::select(ID_New, Time, New_Diet)
+Z_traits <- Z_traits %>%
+  mutate(Time = factor(Time, levels = c("T1", "T2", "T3")),
+         New_Diet = factor(New_Diet),
+         Day = ifelse(Time == "T1", paste0("T1_", New_Diet),
+                      ifelse(Time == "T2", paste0("T2_", New_Diet), paste0("T3_", New_Diet))))
+Z_traits$Time <- factor(Z_traits$Time, levels = c("T1", "T2", "T3"))
+Z_traits$Day <- factor(Z_traits$Day)
 
-
-Z_traits %>% 
-  mutate(Time = factor(Time, levels = c("T1", "T2", "T3"))) %>% 
-  mutate(New_Diet = factor(New_Diet)) %>%
-  mutate(Day = ifelse(Time == "T1", paste0("T1_", New_Diet),
-                      ifelse(Time == "T2", paste0("T2_", New_Diet), paste0("T3_", New_Diet)))) -> Z_traits
-head(Z_traits)
-
-Z_traits$Day<- factor(Z_traits$Day)
-Z_traits$Time<- factor(Z_traits$Time)
-levels(Z_traits$Time)
-levels(Z_traits$Day)
-#Z_traits$common <- NULL
-#One hot encoding the nominal variables.
-rownames(Z_traits) <- Z_traits$ID_New
-Z_traits %>%
+# One-hot encoding the nominal variables
+nominal_variables <- Z_traits %>%
   dplyr::select(one_of("Day", "New_Diet", "Time" )) %>% 
-  #column_to_rownames(var = "common") %>% 
   model.matrix(~.-1, data = .) %>% 
-  as.data.frame() %>% 
-  #rownames_to_column(var = "common") %>% 
-  as_tibble() -> nominal_variables
+  as_tibble()
 
-head(nominal_variables)
-
-
-
-Z_traits %>% 
-  dplyr::select(one_of("Day", "New_Diet", "Time" , "ID_New")) -> ordinal_and_other_variables
-ordinal_and_other_variables
-
-
-#ordinal_and_other_variables$ID_New <- row.names(ordinal_and_other_variables)
-
-#Z_traits <- full_join(nominal_variables, ordinal_and_other_variables, by = "ID_New")
-head(Z_traits)
-dim(Z_traits)
-
+ordinal_and_other_variables <- Z_traits %>% 
+  dplyr::select(one_of("Day", "New_Diet", "Time" , "ID_New"))
 Z_traits <- nominal_variables
 row.names(Z_traits) <- ordinal_and_other_variables$ID_New
 Z_traits$ID_New <- row.names(Z_traits) 
 Z_traits$TimeT1 <- ifelse(grepl("T1", Z_traits$ID_New), 1, 0)
 Z_traits$New_Dietctr <- ifelse(grepl("ctr", Z_traits$ID_New), 1, 0)
-
 row.names(Z_traits)  <- Z_traits$ID_New
-
-if(take_average){
-  Z_traits %>% 
+take_average <- TRUE
+if (take_average) {
+  Z_traits <- Z_traits %>% 
     mutate(ID_New = sub("_[0-9]{1,2}$", "", ID_New)) %>% 
     group_by(ID_New) %>% 
-    summarise_all(list(mean), na.rm = TRUE) %>%  # Remove the NA values 
+    summarise_all(list(mean), na.rm = TRUE) %>%  # Remove NA values
     ungroup() %>% 
-    #dplyr::select(ID_New, c(starts_with("New_Diet")))  %>% 
-    tibble::column_to_rownames(var = "ID_New")  -> Z_traits
-  
+    tibble::column_to_rownames(var = "ID_New")
   Z_traits <- as.data.frame(Z_traits)
-  
-} 
+}
 
-Z_traits %>% rmarkdown::paged_table()
-
-#Z_traits$Day <- NULL
-#Z_traits$New_Diet <- NULL
-#Z_traits$Time <- NULL
 Z_traits <- Z_traits[, c(13:15, 18, 16, 17)]
-
 colnames(Z_traits)[1:6] <- c("Diet_MC1", "Diet_MC2", "Diet_MN3", "Time_T1",  "Time_T2", "Time_T3")
 
 # Check that the samples are in the same order. 
