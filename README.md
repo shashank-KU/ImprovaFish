@@ -4,12 +4,12 @@
   - [Overview of the data generated in this study](#overview-of-the-data-generated-in-this-study)
   - [Getting Started](#getting-started)
     - [Step 1. Package dependencies](#step-1-package-dependencies)
-  - [Metagenomics](#metagenomics)
-    - [Step 2. Metatranscriptomics](#step-2-metatranscriptomics)
-    - [Step 3. Metaproteomics](#step-3-metaproteomics)
-    - [Step 4. Metabolomics](#step-4-metabolomics)
-    - [Step 5. Meta-metatranscriptomics](#step-5-meta-metatranscriptomics)
-    - [Step 6.Omics-Integration](#step-6omics-integration)
+    - [Step 2. Metagenomics](#step-2-metagenomics)
+    - [Step 3. Metatranscriptomics](#step-3-metatranscriptomics)
+    - [Step 4. Metaproteomics](#step-4-metaproteomics)
+    - [Step 5. Metabolomics](#step-5-metabolomics)
+    - [Step 6. Meta-metatranscriptomics](#step-6-meta-metatranscriptomics)
+    - [Step 7.Omics-Integration](#step-7omics-integration)
 - [Bugs](#bugs)
 
 # Feed-microbiome-host interactions in Atlantic salmon over life stages
@@ -51,7 +51,7 @@ library("RColorBrewer")
 library("ampvis2")
 ```
 
-## Metagenomics
+### Step 2. Metagenomics
 Primers were removed from the raw paired-end FASTQ files generated via MiSeq using “cutadapt”. Further, reads were analyzed by QIIME2 (qiime2-2021.8) pipeline through dada2 to infer the ASVs present and their relative abundances across the samples. For bed dust samples, using read quality scores for the dataset, forward and reverse reads were truncated at 280 bp and 260 bp, followed by trimming the 5′ end till 25 bp for both forward and reverse reads, respectively; other quality parameters used dada2 default values for both 16S rRNA gene sequencing. For 16S rRNA gene sequencing, taxonomy was assigned using a pre-trained Naïve Bayes classifier (Silva database, release 138, 99% ASV) were used.
 To ensure that our analyses were not confounded by spurious results, we first analyzed the alpha diversity of negative control samples (including PCR negative, extraction control) that produced sequencing reads (Fig. X). The DNA extraction and other negative controls had significantly lower observed richness than all samples (Kruskal-Wallis test, p = 2.1e-05) for bacterial data. Furthermore, profiles were significantly different for bacterial by different diet group (PERMANOVA for Bray-Curtis, p = 1e-04, R2 = 0.0759). Sequencing contaminants (93 of 7,481 bacterial ASVs) were identified based on the prevalence of ASVs in the negative control and removed using the decontam package (default parameters). We then removed the PCR and sequencing controls before downstream analysis. Data analysis was conducted in R (R Core Team, 2017). Initial preprocessing of the ASV table was conducted using the phyloseq package (v1.38.0). Further filtering was done by removing ASVs without phylum-level classification from 16S rRNA gene sequencing data. Sequencing contaminants were identified and removed using the decontam package. To avoid the bias due to sampling depth, the ASVs table was relative normalized for 16S rRNA gene, and finally we end up with 6,644 ASVs.
 All downstream analyses were performed on this normalized ASVs table unless mentioned. We used two alpha diversity indices, i.e., observed richness and Shannon diversity index. Furthermore, beta diversity was calculated using weighted and unweighted UniFrac metric and visualized by principal coordinates analysis (PCoA). Alpha and beta diversity was calculated using phyloseq v1.38.0 and visualized with ggplot2 v3.3.5 in R v4.1.1. Comparison of community richness and diversity was assessed by the Kruskal-Wallis test between all the groups, and comparison between the two groups was done by Wilcoxon test with Benjamini-Hochberg FDR multiple test correction. Significance testing between the groups for beta diversity was assessed using permutational multivariate analysis of variance (PERMANOVA) using the “vegan” package.
@@ -60,19 +60,19 @@ For all the commands used for downstream analysis for [metagenomics](Metagenomic
 
 
 
-### Step 2. Metatranscriptomics
+### Step 3. Metatranscriptomics
 For all the commands used for downstream analysis for [trascriptomics](MetaTranscriptomics/Step1_Host_Analysis.R)
 
-### Step 3. Metaproteomics
+### Step 4. Metaproteomics
 For all the commands used for downstream analysis for [metaproteomics](MetaProteomics/Step5_Proteomics.R)
 
-### Step 4. Metabolomics
+### Step 5. Metabolomics
 For all the commands used for downstream analysis for metabolomics. For [Lipidomics](Metabolomics/Step3_Lipidomics_WGCNA.R), [HILIC](Metabolomics/Step3_Metabolites_1_WGCNA.R), [RP](Metabolomics/Step3_Metabolites_2_WGCNA.R)
 
-### Step 5. Meta-metatranscriptomics
+### Step 6. Meta-metatranscriptomics
 For all the commands used for downstream analysis for [metatranscriptomics](MetaTranscriptomics/Step1_Host_Analysis.R)
 
-### Step 6.Omics-Integration
+### Step 7.Omics-Integration
 For all the commands used for downstream analysis for [omics-integration](OmicsIntegration/Step6_Integration.R)
 
 
