@@ -2,6 +2,7 @@
 - [Feed-microbiome-host interactions in Atlantic salmon over life stages](#feed-microbiome-host-interactions-in-atlantic-salmon-over-life-stages)
   - [Overview of sampling](#overview-of-sampling)
   - [Overview of the data generated in this study](#overview-of-the-data-generated-in-this-study)
+    - [Packages required](#packages-required)
   - [Metagenomics](#metagenomics)
   - [Metatranscriptomics](#metatranscriptomics)
   - [Metaproteomics](#metaproteomics)
@@ -20,6 +21,32 @@ To meet future food demands, more efficient and sustainable animal production sy
 ## Overview of the data generated in this study
 <img width="960" alt="ImprovAFish" src="https://user-images.githubusercontent.com/30895959/213148498-c9ec83fc-ee0d-4e58-9a79-520b1748db95.png">
 
+### Packages required
+```markdown
+library("ranacapa")
+library("phyloseq")
+library("ggplot2")
+library("stringr")
+library("plyr")
+library("reshape2")
+library("reshape")
+library("dplyr")
+library("tidyr")
+library("doBy")
+library("plyr")
+library("microbiome")
+library("ggpubr")
+library("vegan")
+library("tidyverse")
+library("magrittr")
+library("cowplot")
+library("dendextend")
+library("WGCNA")
+library("metagenomeSeq")
+library("decontam")
+library("RColorBrewer")
+library("ampvis2")
+```
 ## Metagenomics
 Primers were removed from the raw paired-end FASTQ files generated via MiSeq using “cutadapt”. Further, reads were analyzed by QIIME2 (qiime2-2021.8) pipeline through dada2 to infer the ASVs present and their relative abundances across the samples. For bed dust samples, using read quality scores for the dataset, forward and reverse reads were truncated at 280 bp and 260 bp, followed by trimming the 5′ end till 25 bp for both forward and reverse reads, respectively; other quality parameters used dada2 default values for both 16S rRNA gene sequencing. For 16S rRNA gene sequencing, taxonomy was assigned using a pre-trained Naïve Bayes classifier (Silva database, release 138, 99% ASV) were used.
 To ensure that our analyses were not confounded by spurious results, we first analyzed the alpha diversity of negative control samples (including PCR negative, extraction control) that produced sequencing reads (Fig. X). The DNA extraction and other negative controls had significantly lower observed richness than all samples (Kruskal-Wallis test, p = 2.1e-05) for bacterial data. Furthermore, profiles were significantly different for bacterial by different diet group (PERMANOVA for Bray-Curtis, p = 1e-04, R2 = 0.0759). Sequencing contaminants (93 of 7,481 bacterial ASVs) were identified based on the prevalence of ASVs in the negative control and removed using the decontam package (default parameters). We then removed the PCR and sequencing controls before downstream analysis. Data analysis was conducted in R (R Core Team, 2017). Initial preprocessing of the ASV table was conducted using the phyloseq package (v1.38.0). Further filtering was done by removing ASVs without phylum-level classification from 16S rRNA gene sequencing data. Sequencing contaminants were identified and removed using the decontam package. To avoid the bias due to sampling depth, the ASVs table was relative normalized for 16S rRNA gene, and finally we end up with 6,644 ASVs.
