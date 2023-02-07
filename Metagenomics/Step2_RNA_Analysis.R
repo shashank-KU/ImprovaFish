@@ -24,6 +24,7 @@ library("RColorBrewer")
 library("ampvis2")
 library("microbiomeutilities")
 library("viridis")
+
 # Load data
 raw <- import_biom("/Users/shashankgupta/Desktop/ImprovAFish/exported-feature-table/feature-table_taxonomy.biom")
 tree <- read_tree("/Users/shashankgupta/Desktop/ImprovAFish/exported-feature-table/tree.nwk")
@@ -694,16 +695,19 @@ modules.omics.Y <- blockwiseModules(omics_data,
                                     verbose = 3,
                                     maxBlockSize=8000, nThreads = 10)
 
+moduleLabels <- modules.omics.Y$colors
+moduleColors <- labels2colors(modules.omics.Y$colors)
+table(moduleColors)
+table(moduleLabels)
 
-rownames(modules.omics.Y$MEs) <- rownames(omics_data)
-names(modules.omics.Y$colors) <- colnames(omics_data)
-names(modules.omics.Y$unmergedColors) <- colnames(omics_data)
+# rownames(modules.omics.Y$MEs) <- rownames(omics_data)
+# names(modules.omics.Y$colors) <- colnames(omics_data)
+# names(modules.omics.Y$unmergedColors) <- colnames(omics_data)
 
 hubs <- chooseTopHubInEachModule(omics_data, modules.omics.Y$colors, power = st, omitColors = "0")
 
 stage2results_Y <- list(modules = modules.omics.Y, 
                         hubs = hubs)
-
 
 
 

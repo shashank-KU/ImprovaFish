@@ -485,7 +485,7 @@ cowplot::plot_grid(MT_plot$gtable,
                    Lipidomics_corr_X_plot$gtable,
                    ncol = 9,
                    align = 'h',
-                   rel_widths = c(1.4, 0.6, 4.5, 0.8, 1.3,1.3 , 0.26, 0.26, 0.6) # PNG 1700 (Width) * 1000 (Height)  # pdf 18 * 9 portrait
+                   rel_widths = c(1.4, 0.6, 4.5, 0.8, 1.3,1.3 , 0.3, 0.3, 0.6) # PNG 1700 (Width) * 1000 (Height)  # pdf 18 * 9 portrait
 )+ ggplot2::theme(plot.margin = ggplot2::unit(c(5,2,3,2), "cm"))
 
 
