@@ -485,7 +485,7 @@ plot_grid(p5, p6, ncol = 2, rel_widths = c(1.5, 1))
 
 
 # Heatmap to summarize taxonomy at different time points
-ampvis2_obj <- phyloseq_to_ampvis2(psdata.r)
+ampvis2_obj <- phyloseq_to_ampvis2(psdata.p)
 amp_heatmap(ampvis2_obj,
             group_by = "New_Diet",
             facet_by = "samplingTime",
@@ -888,7 +888,7 @@ dplyr::left_join(degrees,
 
 
 degrees %>%
-  dplyr::filter(Module == "8")
+  dplyr::filter(Module == "1")
 
 
 
