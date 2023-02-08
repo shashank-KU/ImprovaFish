@@ -51,7 +51,7 @@ library("formatR")
 library("DT")
 ```
 
-### import data and clean the taxonomy
+### Import data and clean the taxonomy
 ```{r }
 setwd("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/Metagenomics")
 raw <- import_biom("/Users/shashankgupta/Desktop/ImprovAFish/exported-feature-table/feature-table_taxonomy.biom")

@@ -905,10 +905,10 @@ module_eigengenes <- modules.omics.Y$MEs
 
 all.equal(sample_info$common, rownames(module_eigengenes))
 sample_info %>% data.frame() %>%
-  mutate(samplingTime = factor(samplingTime)) %>% 
+  mutate(Time = factor(Time)) %>% 
   mutate(New_Diet = factor(New_Diet)) %>%
-  mutate(Day = ifelse(samplingTime == "T1", paste0("T1_", New_Diet),
-                      ifelse(samplingTime == "T2", paste0("T2_", New_Diet), paste0("T3_", New_Diet)))) -> meta
+  mutate(Day = ifelse(Time == "T1", paste0("T1_", New_Diet),
+                      ifelse(Time == "T2", paste0("T2_", New_Diet), paste0("T3_", New_Diet)))) -> meta
 head(meta)
 
 
@@ -927,19 +927,19 @@ module_19_df <- module_eigengenes %>%
   tibble::rownames_to_column("common") %>%
   # Here we are performing an inner join with a subset of metadata
   dplyr::inner_join(meta %>%
-                      dplyr::select(common, Day, samplingTime, New_Diet),
+                      dplyr::select(common, Day, Time, New_Diet),
                     by = c("common" = "common"))
 
 
-ggplot(module_19_df, aes(x = New_Diet, y = ME18, color = New_Diet)) +
+ggplot(module_19_df, aes(x = New_Diet, y = ME2, color = New_Diet)) +
   # a boxplot with outlier points hidden (they will be in the sina plot)
   geom_boxplot(width = 0.2, outlier.shape = NA) +
   # A sina plot to show all of the individual data points
   ggforce::geom_sina(maxwidth = 0.3) +
-  theme_classic() + facet_wrap("samplingTime")
+  theme_classic() + facet_wrap("Time") 
 
 
-ggplot(module_19_df, aes(x = Day, y = ME18, color = samplingTime)) +
+ggplot(module_19_df, aes(x = Day, y = ME1, color = Time)) +
   # a boxplot with outlier points hidden (they will be in the sina plot)
   geom_boxplot(width = 0.2, outlier.shape = NA) +
   # A sina plot to show all of the individual data points
@@ -960,12 +960,12 @@ gene_module_key %>%
 
 my_comparisons <- list( c("CTR", "MC1"), c("CTR", "MC2"), c("CTR", "MN3"), 
                         c("MC1", "MC2"), c("MC1", "MN3"), c("MC2", "MN3") )
-ggboxplot(module_19_df, x = "New_Diet", y = "ME24",
-          color = "samplingTime", palette = "jco", legend = "none")+ 
+ggboxplot(module_19_df, x = "New_Diet", y = "ME1",
+          color = "Time", palette = "jco", legend = "none")+ 
   stat_compare_means(comparisons = my_comparisons)+ # Add pairwise comparisons p-value
   stat_compare_means(label.y = 0.5) + #geom_jitter(aes(colour = New_Diet), size = 3, alpha = 0.8) + 
   geom_boxplot(aes(fill = New_Diet), width=0.7, alpha = 0.5) +
-  theme_bw() +  theme(legend.position="none",axis.title.x=element_blank())  + facet_grid(~samplingTime) 
+  theme_bw() +  theme(legend.position="none",axis.title.x=element_blank())  + facet_grid(~Time) 
 
 
 
@@ -983,7 +983,7 @@ library(microbial)
 
 
 #T1
-phy_MC1<-subset_samples(psdata, samplingTime %in% c("T1") & New_Diet %in% c("CTR", "MC1"))
+phy_MC1<-subset_samples(psdata.p, samplingTime %in% c("T1") & New_Diet %in% c("CTR", "MC1"))
 phy_MC1 <- prune_taxa(taxa_sums(phy_MC1) >0, phy_MC1)
 table(sample_data(phy_MC1)$New_Diet)
 
