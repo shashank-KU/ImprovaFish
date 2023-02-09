@@ -835,6 +835,161 @@ expression_plots<-mME_meta%>%
 
 
 
+################################################################################################
+################################################################################################
+##
+# From Metabolomics_1 HILIC
+
+#stage2results_HILIC_backup <- stage2results_HILIC
+stage2results_HILIC
+rownames(stage2results_HILIC$modules$MEs) <- gsub("-MC1-TK1-", "_mc1_tk1_", rownames(stage2results_HILIC$modules$MEs))
+
+# Remove ME0 from analysis
+idx <- which(colnames(stage2results_HILIC$modules$MEs) == "ME0")
+stage2results_HILIC$modules$MEs <- stage2results_HILIC$modules$MEs[,-idx]
+
+
+if(take_average){
+  stage2results_HILIC$modules$MEs %>% 
+    rownames_to_column(var = "common") %>% 
+    mutate(common = sub("_VFA.*", "", common)) %>% 
+    group_by(common) %>% 
+    summarise_all(list(mean)) %>% 
+    ungroup() -> stage2results_HILIC_eigengenes
+  
+  stage2results_HILIC_eigengenes <- as.data.frame(stage2results_HILIC_eigengenes)
+} else{
+  stage2results_HILIC_eigengenes <- stage2results_HILIC$modules$MEs
+}
+
+rownames(stage2results_HILIC_eigengenes) <- stage2results_HILIC_eigengenes$common
+stage2results_HILIC_eigengenes$common <- NULL
+
+dim(stage2results_HILIC_eigengenes); dim(stage2results_X_eigengenes)
+table(rownames(stage2results_X_eigengenes) %in% rownames(stage2results_HILIC_eigengenes))
+stage2results_X_eigengenes_New <- stage2results_X_eigengenes[rownames(stage2results_X_eigengenes) %in% rownames(stage2results_HILIC_eigengenes), ]
+table( rownames(stage2results_X_eigengenes_New) %in% rownames(stage2results_HILIC_eigengenes))
+
+#Correlate modules from transcriptomics and metagenomics.
+
+# Check that the samples are in the same order. 
+# If they are not in order, change their order to match; If they do not match one-to-one, call an error.
+same_order <- all(rownames(stage2results_HILIC_eigengenes) == rownames(stage2results_X_eigengenes_New))
+if(!same_order){
+  stage2results_HILIC_eigengenes <- stage2results_HILIC_eigengenes[order(rownames(stage2results_HILIC_eigengenes)),]
+  stage2results_X_eigengenes_New <- stage2results_X_eigengenes_New[order(rownames(stage2results_X_eigengenes_New)),]
+  same_order <- all(rownames(stage2results_HILIC_eigengenes) == rownames(stage2results_X_eigengenes_New))
+  if(!same_order){
+    stop("Sample names do not match. Samples should be identical.", call. = F)
+  }
+} else{cat("Samples match")}
+
+
+#####
+p.value_matr <- corr.value_matr <- matrix(ncol = ncol(stage2results_HILIC_eigengenes), 
+                                          nrow = ncol(stage2results_X_eigengenes_New), 
+                                          dimnames = list(colnames(stage2results_X_eigengenes_New), 
+                                                          colnames(stage2results_HILIC_eigengenes)))
+
+
+for(i in 1:ncol(stage2results_X_eigengenes_New)){
+  for(j in 1:ncol(stage2results_HILIC_eigengenes)){
+    cor.res <- cor.test(stage2results_X_eigengenes_New[,i], stage2results_HILIC_eigengenes[,j])
+    p.value_matr[i, j] <- cor.res$p.value
+    corr.value_matr[i, j] <- cor.res$estimate
+  }
+}
+
+# Correct for number of tests
+p.value_matr.adjust <- p.adjust(p.value_matr, method = "fdr")
+dim(p.value_matr.adjust) <- dim(p.value_matr)
+dimnames(p.value_matr.adjust) <- list(colnames(stage2results_X_eigengenes_New), colnames(stage2results_HILIC_eigengenes))
+
+
+# Add significance level.  
+# One star means a p-value of less than 0.05; Two stars is less than 0.01, and three, is less than 0.001.
+
+signif_matrix <- rep("", length(p.value_matr))
+three_star <- which( p.value_matr <= 0.001)
+signif_matrix[three_star] <- "***"
+two_star <- which((p.value_matr <= 0.01) & (p.value_matr > 0.001))
+signif_matrix[two_star] <- "**"
+one_star <- which((p.value_matr <= 0.05) & (p.value_matr > 0.01))
+signif_matrix[one_star] <- "*"
+dim(signif_matrix) = dim(p.value_matr) # Give textMatrix the correct dimensions 
+
+
+# Collect all results into a list.
+Metabolites_1_corr_X <- list(p_value = p.value_matr, 
+                             p_value_adj = p.value_matr.adjust,
+                             signif_matrix = signif_matrix,
+                             correlation = corr.value_matr)
+rm(p.value_matr, p.value_matr.adjust, signif_matrix, corr.value_matr)
+
+
+
+heatmap_colors <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 6, name ="RdBu")))(51)
+
+
+stage2results_HILIC$hubs %>% 
+  as.data.frame() %>% 
+  dplyr::rename("metabolites_HILIC_name" = ".") %>%
+  tibble::rownames_to_column(var = "Module") -> hubmetabolites_HILIC
+
+hubmetabolites_HILIC -> hubmetabolites_HILIC_Before
+
+hubmetabolites_HILIC_Before$Modulemetabolites_HILIC <- paste0("ME" ,hubmetabolites_HILIC_Before$Module)
+
+
+test <- Metabolites_1_corr_X$correlation
+#hubmetabolites_HILIC_Before$metabolites_HILIC_name <- replace(hubmetabolites_HILIC_Before$metabolites_HILIC_name, hubmetabolites_HILIC_Before$metabolites_HILIC_name=="Ile.Leu...244.17825.Da.264.70.s", "Ile-Leu")
+#hubmetabolites_HILIC_Before$metabolites_HILIC_name <- replace(hubmetabolites_HILIC_Before$metabolites_HILIC_name, hubmetabolites_HILIC_Before$metabolites_HILIC_name=="Di.N.octyl.phthalate...390.27623.Da.707.55.s", "Di-N-octylphthalate")
+hubmetabolites_HILIC_Before$metabolites_HILIC_name <- replace(hubmetabolites_HILIC_Before$metabolites_HILIC_name, hubmetabolites_HILIC_Before$metabolites_HILIC_name=="Asp.Asp_248.06507Da665.09s", "Asp-Asp")
+hubmetabolites_HILIC_Before$metabolites_HILIC_name <- replace(hubmetabolites_HILIC_Before$metabolites_HILIC_name, hubmetabolites_HILIC_Before$metabolites_HILIC_name=="Glu.Thr_248.10146Da623.48s", "Glu-Thr")
+#colnames(test)[1:2] <- c("D-Arabinonic acid", "Thr-Thr")
+
+match(hubmetabolites_HILIC_Before[, "Modulemetabolites_HILIC"], colnames(test))
+colnames(test)[match(hubmetabolites_HILIC_Before[,"Modulemetabolites_HILIC"], colnames(test))] = hubmetabolites_HILIC_Before[,"metabolites_HILIC_name"]
+
+Metabolites_1_corr_X$correlation <- test
+
+pheatmap::pheatmap(Metabolites_1_corr_X$correlation, 
+                   color = heatmap_colors, 
+                   treeheight_col = 0, 
+                   treeheight_row = 0,  # will be shown on the transcriptomics ME heatmap
+                   cluster_rows = X_ME_dendro,
+                   cutree_rows = row_cut,
+                   display_numbers = Metabolites_1_corr_X$signif_matrix, 
+                   fontsize_number = 8, #10
+                   breaks = seq(from = -1, to = 1, length.out = 51), 
+                   silent = F,
+                   legend = F,
+                   show_rownames = F,
+                   labels_row = paste0(prefix_OTUs, rownames(Metabolites_1_corr_X$correlation)),
+                   labels_col = paste0(colnames(Metabolites_1_corr_X$correlation)),
+                   #main = "Eigen metabolites_HILIC"
+) -> Metabolites_1_corr_X_plot
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
