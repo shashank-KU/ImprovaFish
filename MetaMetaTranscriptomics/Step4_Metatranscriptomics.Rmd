@@ -39,6 +39,8 @@ library("GO.db")
 library("BiocParallel")
 library("DT")
 library("WGCNA")
+plot_labeling_size <- 15
+prefix <- "t"
 ```
 
 ### import data and intial preprocessing
@@ -312,8 +314,6 @@ annot_function_metatrans <- annot_function_metatrans[, c("ID", "kegg_hit", "unir
 ```{r}
 res <- results(dds_metatranscriptomics,
                contrast = list("groupT1mc1","groupT1ctr"))
-table(res$padj < 0.05)
-
 res_tbl <- as_tibble(res, rownames = "ENSEMBL") %>%
   filter(padj <0.05)%>%
   arrange(padj) 
@@ -330,8 +330,6 @@ paste("Total number of upregulated transcripts is",length(res_tbl$log2FoldChange
 ```{r}
 res <- results(dds_metatranscriptomics,
                contrast = list("groupT1mc2","groupT1ctr"))
-table(res$padj < 0.05)
-
 res_tbl <- as_tibble(res, rownames = "ENSEMBL") %>%
   filter(padj <0.05)%>%
   arrange(padj) 
@@ -340,16 +338,13 @@ res_tbl <- merge(res_tbl, annot_function_metatrans, by.x = "ENSEMBL", by.y = "ID
 #   filter(log2FoldChange > 0) %>%
 #   select(pfam_hits, uniref_taxonomy)
 DT::datatable(res_tbl)
-length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
-length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
+paste("Total number of upregulated transcripts is",length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0])[1],"and downregulated is",length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0])[1])
 ```
 
 
 ```{r}
 res <- results(dds_metatranscriptomics,
                contrast = list("groupT1mn3","groupT1ctr"))
-table(res$padj < 0.05)
-
 res_tbl <- as_tibble(res, rownames = "ENSEMBL") %>%
   filter(padj <0.05)%>%
   arrange(padj) 
@@ -358,18 +353,13 @@ res_tbl <- merge(res_tbl, annot_function_metatrans, by.x = "ENSEMBL", by.y = "ID
 #   filter(log2FoldChange > 0) %>%
 #   select(pfam_hits, uniref_taxonomy)
 DT::datatable(res_tbl)
-
-length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
-length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
+paste("Total number of upregulated transcripts is",length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0])[1],"and downregulated is",length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0])[1])
 ```
 
-
+#### Time point (T2)
 ```{r}
-# T2
 res <- results(dds_metatranscriptomics,
                contrast = list("groupT2mc1","groupT2ctr"))
-table(res$padj < 0.05)
-
 res_tbl <- as_tibble(res, rownames = "ENSEMBL") %>%
   filter(padj <0.05)%>%
   arrange(padj) 
@@ -378,16 +368,12 @@ res_tbl <- merge(res_tbl, annot_function_metatrans, by.x = "ENSEMBL", by.y = "ID
 #   filter(log2FoldChange > 0) %>%
 #   select(pfam_hits, uniref_taxonomy)
 DT::datatable(res_tbl)
-
-length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
-length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
+paste("Total number of upregulated transcripts is",length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0])[1],"and downregulated is",length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0])[1])
 ```
 
 ```{r}
 res <- results(dds_metatranscriptomics,
                contrast = list("groupT2mc2","groupT2ctr"))
-table(res$padj < 0.05)
-
 res_tbl <- as_tibble(res, rownames = "ENSEMBL") %>%
   filter(padj <0.05)%>%
   arrange(padj) 
@@ -397,17 +383,13 @@ res_tbl <- merge(res_tbl, annot_function_metatrans, by.x = "ENSEMBL", by.y = "ID
 #   filter(log2FoldChange > 0) %>%
 #   select(pfam_hits, uniref_taxonomy)
 DT::datatable(res_tbl)
-
-length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
-length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
+paste("Total number of upregulated transcripts is",length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0])[1],"and downregulated is",length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0])[1])
 ```
 
 
 ```{r}
 res <- results(dds_metatranscriptomics,
                contrast = list("groupT2mn3","groupT2ctr"))
-table(res$padj < 0.05)
-
 res_tbl <- as_tibble(res, rownames = "ENSEMBL") %>%
   filter(padj <0.05)%>%
   arrange(padj) 
@@ -416,17 +398,13 @@ res_tbl <- merge(res_tbl, annot_function_metatrans, by.x = "ENSEMBL", by.y = "ID
 #   filter(log2FoldChange > 0) %>%
 #   select(pfam_hits, uniref_taxonomy)
 DT::datatable(res_tbl)
-length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
-length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
+paste("Total number of upregulated transcripts is",length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0])[1],"and downregulated is",length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0])[1])
 ```
 
-
+#### Time point (T3)
 ```{r}
-# T3
 res <- results(dds_metatranscriptomics,
                contrast = list("groupT3mc1","groupT3ctr"))
-table(res$padj < 0.05)
-
 res_tbl <- as_tibble(res, rownames = "ENSEMBL") %>%
   filter(padj <0.05)%>%
   arrange(padj) 
@@ -435,18 +413,13 @@ res_tbl <- merge(res_tbl, annot_function_metatrans, by.x = "ENSEMBL", by.y = "ID
 #   filter(log2FoldChange > 0) %>%
 #   select(pfam_hits, uniref_taxonomy)
 DT::datatable(res_tbl)
-
-
-length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
-length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
+paste("Total number of upregulated transcripts is",length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0])[1],"and downregulated is",length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0])[1])
 ```
 
 
 ```{r}
 res <- results(dds_metatranscriptomics,
                contrast = list("groupT3mc2","groupT3ctr"))
-table(res$padj < 0.05)
-
 res_tbl <- as_tibble(res, rownames = "ENSEMBL") %>%
   filter(padj <0.05)%>%
   arrange(padj)
@@ -455,18 +428,13 @@ res_tbl <- merge(res_tbl, annot_function_metatrans, by.x = "ENSEMBL", by.y = "ID
 #   filter(log2FoldChange > 0) %>%
 #   select(pfam_hits, uniref_taxonomy)
 DT::datatable(res_tbl)
-
-
-length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
-length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
+paste("Total number of upregulated transcripts is",length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0])[1],"and downregulated is",length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0])[1])
 ```
 
 
 ```{r}
 res <- results(dds_metatranscriptomics,
                contrast = list("groupT3mn3","groupT3ctr"))
-table(res$padj < 0.05)
-
 res_tbl <- as_tibble(res, rownames = "ENSEMBL") %>%
   filter(padj <0.05)%>%
   arrange(padj) 
@@ -475,16 +443,12 @@ res_tbl <- merge(res_tbl, annot_function_metatrans, by.x = "ENSEMBL", by.y = "ID
 #   filter(log2FoldChange > 0) %>%
 #   select(pfam_hits, uniref_taxonomy)
 DT::datatable(res_tbl)
-
-
-length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
-length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
+paste("Total number of upregulated transcripts is",length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0])[1],"and downregulated is",length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0])[1])
 ```
 
 
 ```{r}
-# loop
-# Create the dataframe
+# Create the dataframe (loop)
 df <- data.frame(Group=character(), a1=character(), a2=character(), a3=character())
 
 # Loop through each group and store the results in the dataframe
@@ -506,9 +470,13 @@ for(treatment in c("T1", "T2", "T3")){
     df <- rbind(df, c(sample_name,a))
   }
 }
-names(df) <- c("Group", "a1", "a2", "a3")
-df
+names(df) <- c("Groups", "Differentially expressed genes")
+DT::datatable(df)
+```
 
+
+Visualization of differenitally expressed genes
+```{r, eval=FALSE, echo=TRUE, results='hide'}
 res <- results(dds_metatranscriptomics,contrast = list("groupT3mn3","groupT3ctr")) %>%
   as.data.frame %>%
   add_rownames(var = "Genes") %>%
@@ -539,150 +507,5 @@ p2 <- assay(vsd) %>%
   facet_grid(rows = vars(Genes)) + theme_bw()
 
 cowplot::plot_grid(plotlist = list(p1,p2), ncol = 2)
+```
 
-
-
-
-```{r}
-#stage2results_MetaTrans_backup <- stage2results_MetaTrans
-# Remove ME0 from analysis
-idx <- which(colnames(stage2results_MetaTrans$modules$MEs) == "ME0")
-stage2results_MetaTrans$modules$MEs <- stage2results_MetaTrans$modules$MEs[,-idx]
-
-take_average <- TRUE
-
-if(take_average){
-  stage2results_MetaTrans$modules$MEs %>% 
-    rownames_to_column(var = "common") %>% 
-    mutate(common = sub("_HGm[0-9]{1,2}$", "", common)) %>% 
-    group_by(common) %>% 
-    summarise_all(list(mean)) %>% 
-    ungroup() -> stage2results_MetaTrans_eigengenes
-  
-  stage2results_MetaTrans_eigengenes <- as.data.frame(stage2results_MetaTrans_eigengenes)
-} else{
-  stage2results_MetaTrans_eigengenes <- stage2results_MetaTrans$modules$MEs
-}
-
-rownames(stage2results_MetaTrans_eigengenes) <- stage2results_MetaTrans_eigengenes$common
-stage2results_MetaTrans_eigengenes$common <- NULL
-
-dim(stage2results_MetaTrans_eigengenes); dim(stage2results_X_eigengenes)
-
-
-
-table(rownames(stage2results_X_eigengenes) %in% rownames(stage2results_MetaTrans_eigengenes))
-
-stage2results_X_eigengenes_New <- stage2results_X_eigengenes[rownames(stage2results_X_eigengenes) %in% rownames(stage2results_MetaTrans_eigengenes), ]
-
-
-table(rownames(stage2results_X_eigengenes_New) %in% rownames(stage2results_MetaTrans_eigengenes))
-
-
-
-#Correlate modules from transcriptomics and metagenomics.
-
-# Check that the samples are in the same order. 
-# If they are not in order, change their order to match; If they do not match one-to-one, call an error.
-same_order <- all(rownames(stage2results_MetaTrans_eigengenes) == rownames(stage2results_X_eigengenes_New))
-if(!same_order){
-  stage2results_MetaTrans_eigengenes <- stage2results_MetaTrans_eigengenes[order(rownames(stage2results_MetaTrans_eigengenes)),]
-  stage2results_X_eigengenes_New <- stage2results_X_eigengenes_New[order(rownames(stage2results_X_eigengenes_New)),]
-  same_order <- all(rownames(stage2results_MetaTrans_eigengenes) == rownames(stage2results_X_eigengenes_New))
-  if(!same_order){
-    stop("Sample names do not match. Samples should be identical.", call. = F)
-  }
-} else{cat("Samples match")}
-
-
-#####
-p.value_matr <- corr.value_matr <- matrix(ncol = ncol(stage2results_MetaTrans_eigengenes), 
-                                          nrow = ncol(stage2results_X_eigengenes_New), 
-                                          dimnames = list(colnames(stage2results_X_eigengenes_New), 
-                                                          colnames(stage2results_MetaTrans_eigengenes)))
-
-
-for(i in 1:ncol(stage2results_X_eigengenes_New)){
-  for(j in 1:ncol(stage2results_MetaTrans_eigengenes)){
-    cor.res <- cor.test(stage2results_X_eigengenes_New[,i], stage2results_MetaTrans_eigengenes[,j])
-    p.value_matr[i, j] <- cor.res$p.value
-    corr.value_matr[i, j] <- cor.res$estimate
-  }
-}
-
-# Correct for number of tests
-p.value_matr.adjust <- p.adjust(p.value_matr, method = "fdr")
-dim(p.value_matr.adjust) <- dim(p.value_matr)
-dimnames(p.value_matr.adjust) <- list(colnames(stage2results_X_eigengenes_New), colnames(stage2results_MetaTrans_eigengenes))
-
-
-# Add significance level.  
-# One star means a p-value of less than 0.05; Two stars is less than 0.01, and three, is less than 0.001.
-
-signif_matrix <- rep("", length(p.value_matr))
-three_star <- which( p.value_matr <= 0.001)
-signif_matrix[three_star] <- "***"
-two_star <- which((p.value_matr <= 0.01) & (p.value_matr > 0.001))
-signif_matrix[two_star] <- "**"
-one_star <- which((p.value_matr <= 0.05) & (p.value_matr > 0.01))
-signif_matrix[one_star] <- "*"
-dim(signif_matrix) = dim(p.value_matr) # Give textMatrix the correct dimensions 
-
-
-# Collect all results into a list.
-MetaTrans_corr_X <- list(p_value = p.value_matr, 
-                 p_value_adj = p.value_matr.adjust,
-                 signif_matrix = signif_matrix,
-                 correlation = corr.value_matr)
-rm(p.value_matr, p.value_matr.adjust, signif_matrix, corr.value_matr)
-
-
-
-heatmap_colors <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 6, name ="RdBu")))(51)
-
-
-
-#Annotation for Eigen Metatranscriptomics
-meta_info <- read_tsv("CountsKallistoQuantificationDeNovoSTxDRAM/Total.DRAM.STx.bac.k2.total.annotations.tsv")
-rownames(meta_info) <- meta_info$...1
-stage2results_MetaTrans$hubs %>% 
-  as.data.frame() %>% 
-  dplyr::rename("metatranscriptomics_name" = ".") %>%
-  tibble::rownames_to_column(var = "Module") -> hubmetatranscriptomics
-
-
-dplyr::left_join(hubmetatranscriptomics, 
-                 (meta_info %>%
-                    tibble::rownames_to_column(var = "metatranscriptomics_name")), 
-                 by = "metatranscriptomics_name") -> hubmetatranscriptomics_Before
-
-hubmetatranscriptomics_Before$Modulemetatranscriptomic <- paste0("ME" ,hubmetatranscriptomics_Before$Module)
-hubmetatranscriptomics_Before <- hubmetatranscriptomics_Before[, c(33, 15)]
-
-#Match with Eigen Metatranscriptomics
-test <- MetaTrans_corr_X$correlation
-match(hubmetatranscriptomics_Before[, "Modulemetatranscriptomic"], colnames(test))
-colnames(test)[match(hubmetatranscriptomics_Before[,"Modulemetatranscriptomic"], colnames(test))] = hubmetatranscriptomics_Before[,"uniref_taxonomy"]
-
-MetaTrans_corr_X$correlation <- test
-
-pheatmap::pheatmap(MetaTrans_corr_X$correlation, 
-                   color = heatmap_colors, 
-                   treeheight_col = 0, 
-                   treeheight_row = 0,  # will be shown on the transcriptomics ME heatmap
-                   cluster_rows = X_ME_dendro,
-                   cutree_rows = row_cut,
-                   display_numbers = MetaTrans_corr_X$signif_matrix, 
-                   fontsize_number = 8, #10
-                   breaks = seq(from = -1, to = 1, length.out = 51), 
-                   silent = F,
-                   show_rownames = F, legend = F,
-                   labels_row = paste0(prefix_OTUs, rownames(MetaTrans_corr_X$correlation)),
-                   labels_col = paste0(colnames(MetaTrans_corr_X$correlation)),
-                   main = paste("Eigen\n", "Metatranscriptomics" )) -> MetaTrans_corr_X_plot
-
-
-
-
-
-##

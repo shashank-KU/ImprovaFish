@@ -493,6 +493,137 @@ cowplot::plot_grid(MT_plot$gtable,
 
 
 
+##############################################################################################################
+##############################################################################################################
+# From Meta-MetaTranscriptomics
+#stage2results_MetaTrans_backup <- stage2results_MetaTrans
+# Remove ME0 from analysis
+idx <- which(colnames(stage2results_MetaTrans$modules$MEs) == "ME0")
+stage2results_MetaTrans$modules$MEs <- stage2results_MetaTrans$modules$MEs[,-idx]
+
+take_average <- TRUE
+if(take_average){
+  stage2results_MetaTrans$modules$MEs %>% 
+    rownames_to_column(var = "common") %>% 
+    mutate(common = sub("_HGm[0-9]{1,2}$", "", common)) %>% 
+    group_by(common) %>% 
+    summarise_all(list(mean)) %>% 
+    ungroup() -> stage2results_MetaTrans_eigengenes
+  
+  stage2results_MetaTrans_eigengenes <- as.data.frame(stage2results_MetaTrans_eigengenes)
+} else{
+  stage2results_MetaTrans_eigengenes <- stage2results_MetaTrans$modules$MEs
+}
+
+rownames(stage2results_MetaTrans_eigengenes) <- stage2results_MetaTrans_eigengenes$common
+stage2results_MetaTrans_eigengenes$common <- NULL
+
+dim(stage2results_MetaTrans_eigengenes); dim(stage2results_X_eigengenes)
+
+
+
+table(rownames(stage2results_X_eigengenes) %in% rownames(stage2results_MetaTrans_eigengenes))
+
+stage2results_X_eigengenes_New <- stage2results_X_eigengenes[rownames(stage2results_X_eigengenes) %in% rownames(stage2results_MetaTrans_eigengenes), ]
+table(rownames(stage2results_X_eigengenes_New) %in% rownames(stage2results_MetaTrans_eigengenes))
+
+#Correlate modules from transcriptomics and metagenomics.
+# Check that the samples are in the same order. 
+# If they are not in order, change their order to match; If they do not match one-to-one, call an error.
+same_order <- all(rownames(stage2results_MetaTrans_eigengenes) == rownames(stage2results_X_eigengenes_New))
+if(!same_order){
+  stage2results_MetaTrans_eigengenes <- stage2results_MetaTrans_eigengenes[order(rownames(stage2results_MetaTrans_eigengenes)),]
+  stage2results_X_eigengenes_New <- stage2results_X_eigengenes_New[order(rownames(stage2results_X_eigengenes_New)),]
+  same_order <- all(rownames(stage2results_MetaTrans_eigengenes) == rownames(stage2results_X_eigengenes_New))
+  if(!same_order){
+    stop("Sample names do not match. Samples should be identical.", call. = F)
+  }
+} else{cat("Samples match")}
+
+
+#####
+p.value_matr <- corr.value_matr <- matrix(ncol = ncol(stage2results_MetaTrans_eigengenes), 
+                                          nrow = ncol(stage2results_X_eigengenes_New), 
+                                          dimnames = list(colnames(stage2results_X_eigengenes_New), 
+                                                          colnames(stage2results_MetaTrans_eigengenes)))
+
+
+for(i in 1:ncol(stage2results_X_eigengenes_New)){
+  for(j in 1:ncol(stage2results_MetaTrans_eigengenes)){
+    cor.res <- cor.test(stage2results_X_eigengenes_New[,i], stage2results_MetaTrans_eigengenes[,j])
+    p.value_matr[i, j] <- cor.res$p.value
+    corr.value_matr[i, j] <- cor.res$estimate
+  }
+}
+
+# Correct for number of tests
+p.value_matr.adjust <- p.adjust(p.value_matr, method = "fdr")
+dim(p.value_matr.adjust) <- dim(p.value_matr)
+dimnames(p.value_matr.adjust) <- list(colnames(stage2results_X_eigengenes_New), colnames(stage2results_MetaTrans_eigengenes))
+
+
+# Add significance level.  
+# One star means a p-value of less than 0.05; Two stars is less than 0.01, and three, is less than 0.001.
+
+signif_matrix <- rep("", length(p.value_matr))
+three_star <- which( p.value_matr <= 0.001)
+signif_matrix[three_star] <- "***"
+two_star <- which((p.value_matr <= 0.01) & (p.value_matr > 0.001))
+signif_matrix[two_star] <- "**"
+one_star <- which((p.value_matr <= 0.05) & (p.value_matr > 0.01))
+signif_matrix[one_star] <- "*"
+dim(signif_matrix) = dim(p.value_matr) # Give textMatrix the correct dimensions 
+
+
+# Collect all results into a list.
+MetaTrans_corr_X <- list(p_value = p.value_matr, 
+                         p_value_adj = p.value_matr.adjust,
+                         signif_matrix = signif_matrix,
+                         correlation = corr.value_matr)
+rm(p.value_matr, p.value_matr.adjust, signif_matrix, corr.value_matr)
+
+heatmap_colors <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 6, name ="RdBu")))(51)
+
+#Annotation for Eigen Metatranscriptomics
+meta_info <- read_tsv("CountsKallistoQuantificationDeNovoSTxDRAM/Total.DRAM.STx.bac.k2.total.annotations.tsv")
+rownames(meta_info) <- meta_info$...1
+stage2results_MetaTrans$hubs %>% 
+  as.data.frame() %>% 
+  dplyr::rename("metatranscriptomics_name" = ".") %>%
+  tibble::rownames_to_column(var = "Module") -> hubmetatranscriptomics
+
+
+dplyr::left_join(hubmetatranscriptomics, 
+                 (meta_info %>%
+                    tibble::rownames_to_column(var = "metatranscriptomics_name")), 
+                 by = "metatranscriptomics_name") -> hubmetatranscriptomics_Before
+
+hubmetatranscriptomics_Before$Modulemetatranscriptomic <- paste0("ME" ,hubmetatranscriptomics_Before$Module)
+hubmetatranscriptomics_Before <- hubmetatranscriptomics_Before[, c(33, 15)]
+
+#Match with Eigen Metatranscriptomics
+test <- MetaTrans_corr_X$correlation
+match(hubmetatranscriptomics_Before[, "Modulemetatranscriptomic"], colnames(test))
+colnames(test)[match(hubmetatranscriptomics_Before[,"Modulemetatranscriptomic"], colnames(test))] = hubmetatranscriptomics_Before[,"uniref_taxonomy"]
+
+MetaTrans_corr_X$correlation <- test
+
+pheatmap::pheatmap(MetaTrans_corr_X$correlation, 
+                   color = heatmap_colors, 
+                   treeheight_col = 0, 
+                   treeheight_row = 0,  # will be shown on the transcriptomics ME heatmap
+                   cluster_rows = X_ME_dendro,
+                   cutree_rows = row_cut,
+                   display_numbers = MetaTrans_corr_X$signif_matrix, 
+                   fontsize_number = 8, #10
+                   breaks = seq(from = -1, to = 1, length.out = 51), 
+                   silent = F,
+                   show_rownames = F, legend = F,
+                   labels_row = paste0(prefix_OTUs, rownames(MetaTrans_corr_X$correlation)),
+                   labels_col = paste0(colnames(MetaTrans_corr_X$correlation)),
+                   main = paste("Eigen\n", "Metatranscriptomics" )) -> MetaTrans_corr_X_plot
+
+##
 
 
 
@@ -504,11 +635,198 @@ cowplot::plot_grid(MT_plot$gtable,
 
 
 
+##############################################################################################################
+##############################################################################################################
+# From Meta-Proteomics
+#stage2results_Proteomics_backup <- stage2results_Proteomics
+#rownames(stage2results_Proteomics$modules$MEs) <- gsub("-MC1-TK1-", "_MC1_tk1_", rownames(stage2results_Proteomics$modules$MEs))
+# Remove ME0 from analysis
+idx <- which(colnames(stage2results_Proteomics$modules$MEs) == "ME0")
+stage2results_Proteomics$modules$MEs <- stage2results_Proteomics$modules$MEs[,-idx]
+
+take_average<- TRUE
+if(take_average){
+  stage2results_Proteomics$modules$MEs %>% 
+    rownames_to_column(var = "common") %>% 
+    mutate(common = sub("_HGm.*", "", common)) %>% 
+    group_by(common) %>% 
+    summarise_all(list(mean)) %>% 
+    ungroup() -> stage2results_Proteomics_eigengenes
+  
+  stage2results_Proteomics_eigengenes <- as.data.frame(stage2results_Proteomics_eigengenes)
+} else{
+  stage2results_Proteomics_eigengenes <- stage2results_Proteomics$modules$MEs
+}
+
+rownames(stage2results_Proteomics_eigengenes) <- stage2results_Proteomics_eigengenes$common
+stage2results_Proteomics_eigengenes$common <- NULL
+
+dim(stage2results_Proteomics_eigengenes); dim(stage2results_X_eigengenes)
 
 
 
+table(rownames(stage2results_X_eigengenes) %in% rownames(stage2results_Proteomics_eigengenes))
+
+stage2results_X_eigengenes_New <- stage2results_X_eigengenes[rownames(stage2results_X_eigengenes) %in% rownames(stage2results_Proteomics_eigengenes), ]
 
 
+table( rownames(stage2results_X_eigengenes_New) %in% rownames(stage2results_Proteomics_eigengenes))
+table( rownames(stage2results_X_eigengenes_New) == rownames(stage2results_Proteomics_eigengenes))
+
+#Correlate modules from transcriptomics and metagenomics.
+# Check that the samples are in the same order. 
+# If they are not in order, change their order to match; If they do not match one-to-one, call an error.
+same_order <- all(rownames(stage2results_Proteomics_eigengenes) == rownames(stage2results_X_eigengenes_New))
+if(!same_order){
+  stage2results_Proteomics_eigengenes <- stage2results_Proteomics_eigengenes[order(rownames(stage2results_Proteomics_eigengenes)),]
+  stage2results_X_eigengenes_New <- stage2results_X_eigengenes_New[order(rownames(stage2results_X_eigengenes_New)),]
+  same_order <- all(rownames(stage2results_Proteomics_eigengenes) == rownames(stage2results_X_eigengenes_New))
+  if(!same_order){
+    stop("Sample names do not match. Samples should be identical.", call. = F)
+  }
+} else{cat("Samples match")}
+
+
+#####
+p.value_matr <- corr.value_matr <- matrix(ncol = ncol(stage2results_Proteomics_eigengenes), 
+                                          nrow = ncol(stage2results_X_eigengenes_New), 
+                                          dimnames = list(colnames(stage2results_X_eigengenes_New), 
+                                                          colnames(stage2results_Proteomics_eigengenes)))
+
+
+for(i in 1:ncol(stage2results_X_eigengenes_New)){
+  for(j in 1:ncol(stage2results_Proteomics_eigengenes)){
+    cor.res <- cor.test(stage2results_X_eigengenes_New[,i], stage2results_Proteomics_eigengenes[,j])
+    p.value_matr[i, j] <- cor.res$p.value
+    corr.value_matr[i, j] <- cor.res$estimate
+  }
+}
+
+# Correct for number of tests
+p.value_matr.adjust <- p.adjust(p.value_matr, method = "fdr")
+dim(p.value_matr.adjust) <- dim(p.value_matr)
+dimnames(p.value_matr.adjust) <- list(colnames(stage2results_X_eigengenes_New), colnames(stage2results_Proteomics_eigengenes))
+
+
+# Add significance level.  
+# One star means a p-value of less than 0.05; Two stars is less than 0.01, and three, is less than 0.001.
+
+signif_matrix <- rep("", length(p.value_matr))
+three_star <- which( p.value_matr <= 0.001)
+signif_matrix[three_star] <- "***"
+two_star <- which((p.value_matr <= 0.01) & (p.value_matr > 0.001))
+signif_matrix[two_star] <- "**"
+one_star <- which((p.value_matr <= 0.05) & (p.value_matr > 0.01))
+signif_matrix[one_star] <- "*"
+dim(signif_matrix) = dim(p.value_matr) # Give textMatrix the correct dimensions 
+
+
+# Collect all results into a list.
+Proteomics_corr_X <- list(p_value = p.value_matr, 
+                          p_value_adj = p.value_matr.adjust,
+                          signif_matrix = signif_matrix,
+                          correlation = corr.value_matr)
+rm(p.value_matr, p.value_matr.adjust, signif_matrix, corr.value_matr)
+
+
+
+heatmap_colors <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 6, name ="RdBu")))(51)
+
+
+stage2results_Proteomics$hubs %>% 
+  as.data.frame() %>% 
+  dplyr::rename("Proteomics_name" = ".") %>%
+  tibble::rownames_to_column(var = "Module") -> hubProteomics
+
+hubProteomics -> hubProteomics_Before
+
+hubProteomics_Before$ModuleProteomics <- paste0("ME" ,hubProteomics_Before$Module)
+test <- Proteomics_corr_X$correlation
+hubProteomics_Before$Proteomics_name <- sub("XP_.*", "", hubProteomics_Before$Proteomics_name)
+hubProteomics_Before$Proteomics_name <- sub("NP_.*", "", hubProteomics_Before$Proteomics_name)
+hubProteomics_Before$Proteomics_name <- replace(hubProteomics_Before$Proteomics_name, hubProteomics_Before$Proteomics_name=="cytochrome.c.oxidase.subunit.5B..mitochondrial", "Cytochrome c oxidase subunit 5B, mitochondrial")
+hubProteomics_Before$Proteomics_name <- replace(hubProteomics_Before$Proteomics_name, hubProteomics_Before$Proteomics_name=="myosin.7.like.isoform.X1", "myosin-7 isoform X1")
+hubProteomics_Before$Proteomics_name <- replace(hubProteomics_Before$Proteomics_name, hubProteomics_Before$Proteomics_name=="creatine.kinase.S.type..mitochondrial", "Creatine kinase S-type, mitochondrial")
+hubProteomics_Before$Proteomics_name <- replace(hubProteomics_Before$Proteomics_name, hubProteomics_Before$Proteomics_name=="X3.hydroxyisobutyrate.dehydrogenase..mitochondrial", "3-hydroxyisobutyrate dehydrogenase, mitochondrial")
+hubProteomics_Before$Proteomics_name <- replace(hubProteomics_Before$Proteomics_name, hubProteomics_Before$Proteomics_name=="LOW.QUALITY.PROTEIN..zonadhesin.like", "Zonadhesin like")
+hubProteomics_Before$Proteomics_name <- replace(hubProteomics_Before$Proteomics_name, hubProteomics_Before$Proteomics_name=="cytosolic.non.specific.dipeptidase", "Cytosol nonspecific dipeptidas")
+hubProteomics_Before$Proteomics_name <- replace(hubProteomics_Before$Proteomics_name, hubProteomics_Before$Proteomics_name=="protocadherin.Fat.4", "Protocadherin Fat 4")
+hubProteomics_Before$Proteomics_name <- replace(hubProteomics_Before$Proteomics_name, hubProteomics_Before$Proteomics_name=="cadherin.17.precursor", "Cadherins 17 precursor")
+hubProteomics_Before$Proteomics_name <- replace(hubProteomics_Before$Proteomics_name, hubProteomics_Before$Proteomics_name=="sushi.domain.containing.protein.2.isoform.X2", "Sushi domain-containing protein 2")
+hubProteomics_Before$Proteomics_name <- replace(hubProteomics_Before$Proteomics_name, hubProteomics_Before$Proteomics_name=="intestinal.type.alkaline.phosphatase", "Intestinal-type alkaline phosphatase")
+
+match(hubProteomics_Before[, "ModuleProteomics"], colnames(test))
+colnames(test)[match(hubProteomics_Before[,"ModuleProteomics"], colnames(test))] = hubProteomics_Before[,"Proteomics_name"]
+
+Proteomics_corr_X$correlation <- test
+pheatmap::pheatmap(Proteomics_corr_X$correlation, 
+                   color = heatmap_colors, 
+                   treeheight_col = 0, 
+                   treeheight_row = 0,  # will be shown on the transcriptomics ME heatmap
+                   cluster_rows = X_ME_dendro,
+                   cutree_rows = row_cut,
+                   display_numbers = Proteomics_corr_X$signif_matrix, 
+                   fontsize_number = 8, #10
+                   breaks = seq(from = -1, to = 1, length.out = 51), 
+                   silent = F,
+                   show_rownames = F,
+                   legend = F,
+                   labels_row = paste0(prefix_OTUs, rownames(Proteomics_corr_X$correlation)),
+                   labels_col = paste0(colnames(Proteomics_corr_X$correlation)),
+                   main = paste("Eigen\n", "Meta-proteins" )
+) -> Proteomics_corr_X_plot
+
+
+```{r, warning=FALSE, message=FALSE, eval=FALSE}
+MEs = moduleEigengenes(Proteomics_host, moduleLabels1)$eigengenes
+
+MEs <- orderMEs(MEs)
+module_order = names(MEs) %>% gsub("ME","", .)
+MEs0 <- MEs
+MEs0$Sample.ID = row.names(MEs)
+
+mME = MEs0 %>%
+  pivot_longer(-Sample.ID) %>%
+  mutate(
+    name = gsub("ME", "", name),
+    name = factor(name, levels = module_order)
+  )
+
+
+
+library(tidyverse)
+setwd("/Users/shashankgupta/Desktop/ImprovAFish/ImprovAFish")
+sample_info3 <- read.csv("sample_info.csv", row.names = 1)
+sample_info3$Sample.ID <- sample_info3$ID_New
+mME_meta <- merge(mME, sample_info3, by = "Sample.ID") 
+colnames(mME_meta)[2] <-"Module"
+
+mME_meta$New_Diet <- factor(mME_meta$New_Diet, levels = c("CTR", "MC1", "MC2", "MN3"))
+mME_meta$Module <- factor(mME_meta$Module, levels = c("0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
+                                                      "10", "11", "12", "13", "14", "15", "16", "17",
+                                                      "18", "19", "20","21","22","23", "24"))
+expression_plots<-mME_meta%>%
+  #  group_by(Module) %>%
+  ggplot(aes(x=Time, y=value, fill=New_Diet)) +
+  facet_wrap(~ Module)+
+  ylab("Mean Module Eigenegene Value") +
+  geom_hline(yintercept = 0, linetype="dashed", color = "grey")+
+  geom_boxplot(width=.5, outlier.shape= NA, position = position_dodge(width = 0.5), alpha = 0.7) +
+  stat_summary(fun=mean, geom="line", aes(New_Diet=New_Diet, color = New_Diet), position = position_dodge(width = 0.5))  + 
+  geom_point(pch = 21, position = position_dodge(width = 0.5)) +
+  scale_fill_manual(name="Lifestage", values=c("#8C510A", "#DFC27D","#80CDC1", "#003C30", "#BA55D3")) +
+  scale_color_manual(name="Lifestage", values=c("#8C510A", "#DFC27D","#80CDC1", "#003C30", "#BA55D3")) + 
+  #xlab("Hours Post-Fertilization") + #Axis titles
+  theme_bw() + theme(panel.border = element_rect(color="black", fill=NA, size=0.75), panel.grid.major = element_blank(), #Makes background theme white
+                     panel.grid.minor = element_blank(), axis.line = element_blank()) +
+  theme(axis.text = element_text(size = 11 , color = "black"),
+        axis.title = element_text(size = 16, color = "black"), 
+        axis.text.x = element_text(size=11, color="black"), 
+        legend.title=element_blank(), 
+        legend.text=element_text(color="black", size=12)); expression_plots
+
+
+```
 
 
 
