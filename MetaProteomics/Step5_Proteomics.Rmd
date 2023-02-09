@@ -420,55 +420,5 @@ plot_grid(poteomicsT3MC1, poteomicsT3MC2, poteomicsT3MN3, labels = "AUTO", ncol 
 ```
 
 
-```{r, warning=FALSE, message=FALSE, eval=FALSE}
-MEs = moduleEigengenes(Proteomics_host, moduleLabels1)$eigengenes
-
-MEs <- orderMEs(MEs)
-module_order = names(MEs) %>% gsub("ME","", .)
-MEs0 <- MEs
-MEs0$Sample.ID = row.names(MEs)
-
-mME = MEs0 %>%
-  pivot_longer(-Sample.ID) %>%
-  mutate(
-    name = gsub("ME", "", name),
-    name = factor(name, levels = module_order)
-  )
-
-
-
-library(tidyverse)
-setwd("/Users/shashankgupta/Desktop/ImprovAFish/ImprovAFish")
-sample_info3 <- read.csv("sample_info.csv", row.names = 1)
-sample_info3$Sample.ID <- sample_info3$ID_New
-mME_meta <- merge(mME, sample_info3, by = "Sample.ID") 
-colnames(mME_meta)[2] <-"Module"
-
-mME_meta$New_Diet <- factor(mME_meta$New_Diet, levels = c("CTR", "MC1", "MC2", "MN3"))
-mME_meta$Module <- factor(mME_meta$Module, levels = c("0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
-                                                      "10", "11", "12", "13", "14", "15", "16", "17",
-                                                      "18", "19", "20","21","22","23", "24"))
-expression_plots<-mME_meta%>%
-  #  group_by(Module) %>%
-  ggplot(aes(x=Time, y=value, fill=New_Diet)) +
-  facet_wrap(~ Module)+
-  ylab("Mean Module Eigenegene Value") +
-  geom_hline(yintercept = 0, linetype="dashed", color = "grey")+
-  geom_boxplot(width=.5, outlier.shape= NA, position = position_dodge(width = 0.5), alpha = 0.7) +
-  stat_summary(fun=mean, geom="line", aes(New_Diet=New_Diet, color = New_Diet), position = position_dodge(width = 0.5))  + 
-  geom_point(pch = 21, position = position_dodge(width = 0.5)) +
-  scale_fill_manual(name="Lifestage", values=c("#8C510A", "#DFC27D","#80CDC1", "#003C30", "#BA55D3")) +
-  scale_color_manual(name="Lifestage", values=c("#8C510A", "#DFC27D","#80CDC1", "#003C30", "#BA55D3")) + 
-  #xlab("Hours Post-Fertilization") + #Axis titles
-  theme_bw() + theme(panel.border = element_rect(color="black", fill=NA, size=0.75), panel.grid.major = element_blank(), #Makes background theme white
-                     panel.grid.minor = element_blank(), axis.line = element_blank()) +
-  theme(axis.text = element_text(size = 11 , color = "black"),
-        axis.title = element_text(size = 16, color = "black"), 
-        axis.text.x = element_text(size=11, color="black"), 
-        legend.title=element_blank(), 
-        legend.text=element_text(color="black", size=12)); expression_plots
-
-
-```
 
 
