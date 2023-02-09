@@ -142,7 +142,7 @@ For all the commands used for downstream analysis for [metagenomics](https://sha
 ### Step 3. Metatranscriptomics
 For all the commands used for downstream analysis for [trascriptomics](MetaTranscriptomics/Step1_Host_Analysis.R)
 
-### Step 4. Metaproteomics
+### Step 4. Metaproteomics 
 For all the commands used for downstream analysis for [metaproteomics](https://shashank-ku.github.io/ImprovaFish/MetaProteomics/Step5_Proteomics.html)
 
 ### Step 5. Metabolomics
