@@ -81,9 +81,106 @@ plot(sampleTree, main = "Sample clustering to detect outliers", sub="", xlab="",
 #   filter(!row.names(Proteomics) %in% outlier)
 ```
 
+### LefSE analysis
+```{r, warning=FALSE, message=FALSE}
+Proteomics <- t(Proteomics)
+raw <- as.matrix(Proteomics)
+OTU = otu_table(raw, taxa_are_rows = TRUE)
+dat <- read.csv("/Users/shashankgupta/Desktop/ImprovAFish/Proteomics-meta/metadata_proteomics.csv")
+row.names(dat) <- dat$Samples
+dat$New_Diet <- toupper(dat$Diet)
+ps <- merge_phyloseq(otu_table(OTU), sample_data(dat))
+tt <- as.data.frame(row.names(Proteomics))
+row.names(tt) <- tt$`row.names(Proteomics)`
+colnames(tt)[1] <- "Kingdom"
+tax_table(ps) <- as.matrix(tt)
+```
+
+#### Diet 1
+```{r, warning=FALSE, message=FALSE}
+set.seed(12345)
+ps_MC1<-subset_samples(ps, New_Diet %in% c("CTR", "MC1"))
+ps_MC1 <- prune_taxa(taxa_sums(ps_MC1) >0, ps_MC1)
+lef_out<-run_lefse(ps_MC1, group = "New_Diet", norm = "CPM", 
+                   kw_cutoff = 0.05, lda_cutoff = 1.75, taxa_rank = "none")
+
+plot_ef_bar(lef_out)
+table(marker_table(lef_out)$enrich_group)
+DT::datatable(data.frame(marker_table(lef_out)) %>%
+  #filter(enrich_group != "CTR") %>%
+  #select(feature, enrich_group) %>%
+  `rownames<-`( NULL))
+##Change orientation
+# t1<- data.frame(marker_table(lef_out))
+# t1 %>%
+#   mutate(ef_lda = ifelse(enrich_group == "CTR", ef_lda, -ef_lda)) -> t1
+# marker_table(lef_out) <- t1
+```
+
+#### Diet 2
+```{r, warning=FALSE, message=FALSE}
+ps_MC2<-subset_samples(ps, New_Diet %in% c("CTR", "MC2"))
+ps_MC2 <- prune_taxa(taxa_sums(ps_MC2) >0, ps_MC2)
+table(sample_data(ps_MC2)$Diet)
+
+
+lef_out<-run_lefse(ps_MC2, group = "New_Diet", norm = "CPM", 
+                   kw_cutoff = 0.05, lda_cutoff = 1.75, taxa_rank = "none")
+
+plot_ef_bar(lef_out)
+table(marker_table(lef_out)$enrich_group)
+DT::datatable(data.frame(marker_table(lef_out)) %>%
+  #filter(enrich_group != "CTR") %>%
+  #select(feature) %>%
+  `rownames<-`( NULL ))
+```
+
+#### Diet 3
+```{r, warning=FALSE, message=FALSE}
+ps_MN3<-subset_samples(ps, New_Diet %in% c("CTR", "MN3"))
+ps_MN3 <- prune_taxa(taxa_sums(ps_MN3) >0, ps_MN3)
+table(sample_data(ps_MN3)$New_Diet)
+
+
+lef_out<-run_lefse(ps_MN3, group = "New_Diet", norm = "CPM", 
+                   kw_cutoff = 0.05, lda_cutoff = 1.75, taxa_rank = "none")
+
+plot_ef_bar(lef_out)
+table(marker_table(lef_out)$enrich_group)
+DT::datatable(data.frame(marker_table(lef_out)) %>%
+  #filter(enrich_group != "CTR") %>%
+  #select(feature) %>%
+  `rownames<-`( NULL ))
+```
+
+
+```{r, warning=FALSE, message=FALSE, fig.align='center', fig.height=16, fig.width=12, eval=FALSE}
+#loop
+library(cowplot)
+output_table <- data.frame()
+
+for (i in c("T3")){
+  for (j in c("MC1","MC2", "MN3")){
+    phy<-subset_samples(ps, Time %in% c(i) & New_Diet %in% c("CTR", j))
+    phy <- prune_taxa(taxa_sums(phy) >0, phy)
+    lef_out<-run_lefse(phy, group = "New_Diet", norm = "CPM", 
+                   kw_cutoff = 0.05, lda_cutoff = 1.75, taxa_rank = "none")
+    assign(paste0("poteomics", i, j), plot_abundance(lef_out, group = "New_Diet"))
+    output_table[i,j]<-sum(marker_table(lef_out)$enrich_group == j)
+  }
+}
+#colnames(output_table)<-c("MC1", "MC2", "MN3")
+#rownames(output_table) <- c("T1","T2","T3")
+DT::datatable(output_table)
+
+#plot_grid(pT1MC1, pT1MC2, pT1MN3, pT2MC1, pT2MC2, pT2MN3, pT3MC1, pT3MC2, p3MN3, labels = "AUTO", ncol = 1)
+plot_grid(poteomicsT3MC1, poteomicsT3MC2, poteomicsT3MN3, labels = "AUTO", ncol = 1, align = "hv", rel_heights = c(3,2,1))
+```
+## Step2. Host-microbiome interactions
 ### WGCNA analysis
 ```{r, warning=FALSE, message=FALSE, results='hide'}
 #Transpose such that samples are in rows and Proteomics are in columns.  
+Proteomics <- t(Proteomics)
 dim(Proteomics) %>% paste(c("Samples", "Proteomics"))
 powers <- c(1:10, seq(12,30,2))
 sft <- pickSoftThreshold(Proteomics, 
@@ -183,6 +280,8 @@ hubs_M <- chooseTopHubInEachModule(Proteomics, modules.omics.Proteomics$colors, 
 
 stage2results_Proteomics <- list(modules = modules.omics.Proteomics, 
                                  hubs = hubs_M)
+
+saveRDS(stage2results_Proteomics, "/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/OmicsIntegration/stage2results_Proteomics.rds")
 
 # Convert labels to colors for plotting
 merged_colors <- labels2colors(stage2results_Proteomics$modules$colors)
@@ -323,101 +422,6 @@ cowplot::plot_grid(part_2, density_all_plot, ncol = 1, rel_heights = c(0.8,1), l
 
 
 
-### LefSE analysis
-```{r, warning=FALSE, message=FALSE}
-Proteomics <- t(Proteomics)
-raw <- as.matrix(Proteomics)
-OTU = otu_table(raw, taxa_are_rows = TRUE)
-dat <- read.csv("/Users/shashankgupta/Desktop/ImprovAFish/Proteomics-meta/metadata_proteomics.csv")
-row.names(dat) <- dat$Samples
-dat$New_Diet <- toupper(dat$Diet)
-ps <- merge_phyloseq(otu_table(OTU), sample_data(dat))
-tt <- as.data.frame(row.names(Proteomics))
-row.names(tt) <- tt$`row.names(Proteomics)`
-colnames(tt)[1] <- "Kingdom"
-tax_table(ps) <- as.matrix(tt)
-```
-
-#### Diet 1
-```{r, warning=FALSE, message=FALSE}
-set.seed(12345)
-ps_MC1<-subset_samples(ps, New_Diet %in% c("CTR", "MC1"))
-ps_MC1 <- prune_taxa(taxa_sums(ps_MC1) >0, ps_MC1)
-lef_out<-run_lefse(ps_MC1, group = "New_Diet", norm = "CPM", 
-                   kw_cutoff = 0.05, lda_cutoff = 1.75, taxa_rank = "none")
-
-plot_ef_bar(lef_out)
-table(marker_table(lef_out)$enrich_group)
-DT::datatable(data.frame(marker_table(lef_out)) %>%
-  #filter(enrich_group != "CTR") %>%
-  #select(feature, enrich_group) %>%
-  `rownames<-`( NULL))
-##Change orientation
-# t1<- data.frame(marker_table(lef_out))
-# t1 %>%
-#   mutate(ef_lda = ifelse(enrich_group == "CTR", ef_lda, -ef_lda)) -> t1
-# marker_table(lef_out) <- t1
-```
-
-#### Diet 2
-```{r, warning=FALSE, message=FALSE}
-ps_MC2<-subset_samples(ps, New_Diet %in% c("CTR", "MC2"))
-ps_MC2 <- prune_taxa(taxa_sums(ps_MC2) >0, ps_MC2)
-table(sample_data(ps_MC2)$Diet)
-
-
-lef_out<-run_lefse(ps_MC2, group = "New_Diet", norm = "CPM", 
-                   kw_cutoff = 0.05, lda_cutoff = 1.75, taxa_rank = "none")
-
-plot_ef_bar(lef_out)
-table(marker_table(lef_out)$enrich_group)
-DT::datatable(data.frame(marker_table(lef_out)) %>%
-  #filter(enrich_group != "CTR") %>%
-  #select(feature) %>%
-  `rownames<-`( NULL ))
-```
-
-#### Diet 3
-```{r, warning=FALSE, message=FALSE}
-ps_MN3<-subset_samples(ps, New_Diet %in% c("CTR", "MN3"))
-ps_MN3 <- prune_taxa(taxa_sums(ps_MN3) >0, ps_MN3)
-table(sample_data(ps_MN3)$New_Diet)
-
-
-lef_out<-run_lefse(ps_MN3, group = "New_Diet", norm = "CPM", 
-                   kw_cutoff = 0.05, lda_cutoff = 1.75, taxa_rank = "none")
-
-plot_ef_bar(lef_out)
-table(marker_table(lef_out)$enrich_group)
-DT::datatable(data.frame(marker_table(lef_out)) %>%
-  #filter(enrich_group != "CTR") %>%
-  #select(feature) %>%
-  `rownames<-`( NULL ))
-```
-
-
-```{r, warning=FALSE, message=FALSE, fig.align='center', fig.height=16, fig.width=12, eval=FALSE}
-#loop
-library(cowplot)
-output_table <- data.frame()
-
-for (i in c("T3")){
-  for (j in c("MC1","MC2", "MN3")){
-    phy<-subset_samples(ps, Time %in% c(i) & New_Diet %in% c("CTR", j))
-    phy <- prune_taxa(taxa_sums(phy) >0, phy)
-    lef_out<-run_lefse(phy, group = "New_Diet", norm = "CPM", 
-                   kw_cutoff = 0.05, lda_cutoff = 1.75, taxa_rank = "none")
-    assign(paste0("poteomics", i, j), plot_abundance(lef_out, group = "New_Diet"))
-    output_table[i,j]<-sum(marker_table(lef_out)$enrich_group == j)
-  }
-}
-#colnames(output_table)<-c("MC1", "MC2", "MN3")
-#rownames(output_table) <- c("T1","T2","T3")
-DT::datatable(output_table)
-
-#plot_grid(pT1MC1, pT1MC2, pT1MN3, pT2MC1, pT2MC2, pT2MN3, pT3MC1, pT3MC2, p3MN3, labels = "AUTO", ncol = 1)
-plot_grid(poteomicsT3MC1, poteomicsT3MC2, poteomicsT3MN3, labels = "AUTO", ncol = 1, align = "hv", rel_heights = c(3,2,1))
-```
 
 
 
