@@ -4436,6 +4436,8 @@ hubs_M &lt;- chooseTopHubInEachModule(metabolites_HILIC, modules.omics.HILIC$col
 
 stage2results_HILIC &lt;- list(modules = modules.omics.HILIC, 
                         hubs = hubs_M)
+
+# Save result for omics integration
 saveRDS(stage2results_HILIC, &quot;/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/OmicsIntegration/stage2results_HILIC.rds&quot;)</code></pre>
 <pre class="r"><code># Convert labels to colors for plotting
 merged_colors &lt;- labels2colors(stage2results_HILIC$modules$colors)
