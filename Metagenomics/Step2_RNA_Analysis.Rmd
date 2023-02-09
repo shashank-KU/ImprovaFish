@@ -1057,7 +1057,6 @@ rabuplot(phylo_ob = psdata.r, predictor= "New_Diet", type = "Genus", facet_wrap 
 ```
 
 ## Step2. Host-microbiome interactions
-
 Set seed as a precaution for reproducibility as some methods are non-deterministic.
 ```{r}
 set.seed(13118)
@@ -1073,7 +1072,7 @@ parameter_sets <- list(set_1 = list(applied_norm = "TSS", applied_transf = "CLR"
 chosen_parameter_set <- parameter_sets$set_2
 ```
 
-
+### Formatting the data
 ```{r}
 psdata.r1 <- filter_taxa(psdata.p, function(x) sum(x > 3) > (0.01*length(x)), TRUE)# Remove taxa not seen more than 3 times in at least 5% of samples
 
@@ -1226,6 +1225,7 @@ hubs <- chooseTopHubInEachModule(omics_data, modules.omics.Y$colors, power = st,
 
 stage2results_Y <- list(modules = modules.omics.Y, 
                         hubs = hubs)
+saveRDS(stage2results_Y, "/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/OmicsIntegration/stage2results_Metagenomics.rds")
 ```
 
 Convert labels to colors for plotting and check how many ASVs are there in each modules
