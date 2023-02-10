@@ -107,7 +107,7 @@ set.seed(12345)
 #### Diet 1
 ```{r, message=FALSE, warning=FALSE, fig.align='center', fig.height=1}
 ps_MC1<-subset_samples(ps, Time %in% c("T2") & New_Diet %in% c("CTR", "MC1"))
-ps_MC1 <- prune_taxa(taxa_sums(ps_MC1) >0, ps_MC1)
+ps_MC1 <- prune_taxa(taxa_sums(ps_MC1) > 0, ps_MC1)
 lef_out<-run_lefse(ps_MC1, group = "New_Diet", norm = "CPM", 
                    kw_cutoff = 0.05, lda_cutoff = 0, taxa_rank = "none")
 
@@ -136,12 +136,8 @@ DT::datatable(data.frame(marker_table(lef_out)) %>%
 ```{r, message=FALSE, warning=FALSE, fig.height=3}
 ps_MN3<-subset_samples(ps, Time %in% c("T2") & New_Diet %in% c("CTR", "MN3"))
 ps_MN3 <- prune_taxa(taxa_sums(ps_MN3) >0, ps_MN3)
-table(sample_data(ps_MN3)$New_Diet)
-
-
 lef_out<-run_lefse(ps_MN3, group = "New_Diet", norm = "CPM", 
                    kw_cutoff = 0.05, lda_cutoff = 1.75, taxa_rank = "none")
-
 plot_ef_bar(lef_out)
 DT::datatable(data.frame(marker_table(lef_out)) %>%
   #filter(enrich_group != "CTR") %>%

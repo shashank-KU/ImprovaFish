@@ -105,7 +105,7 @@ set.seed(12345)
 
 ### Time point 2
 #### Diet 1
-```{r, message=FALSE, warning=FALSE, fig.align='center', fig.height=1}
+```{r, message=FALSE, warning=FALSE, fig.align='center', fig.height=2}
 ps_MC1<-subset_samples(ps, Time %in% c("T2") & New_Diet %in% c("CTR", "MC1"))
 ps_MC1 <- prune_taxa(taxa_sums(ps_MC1) >0, ps_MC1)
 lef_out<-run_lefse(ps_MC1, group = "New_Diet", norm = "CPM", 
@@ -119,7 +119,7 @@ DT::datatable(data.frame(marker_table(lef_out)) %>%
 ```
 
 #### Diet 2
-```{r, message=FALSE, warning=FALSE, fig.align='center', fig.height=1}
+```{r, message=FALSE, warning=FALSE, fig.align='center', fig.height=2}
 ps_MC2<-subset_samples(ps, Time %in% c("T2") & New_Diet %in% c("CTR", "MC2"))
 ps_MC2 <- prune_taxa(taxa_sums(ps_MC2) >0, ps_MC2)
 lef_out<-run_lefse(ps_MC2, group = "New_Diet", norm = "CPM", 
@@ -151,7 +151,7 @@ DT::datatable(data.frame(marker_table(lef_out)) %>%
 
 ### Time point 3
 #### Diet 1
-```{r, message=FALSE, warning=FALSE, fig.align='center', fig.height=6}
+```{r, message=FALSE, warning=FALSE, fig.align='center', fig.height=3}
 ps_MC1<-subset_samples(ps, Time %in% c("T3") & New_Diet %in% c("CTR", "MC1"))
 ps_MC1 <- prune_taxa(taxa_sums(ps_MC1) >0, ps_MC1)
 lef_out<-run_lefse(ps_MC1, group = "New_Diet", norm = "CPM", 
@@ -165,7 +165,7 @@ DT::datatable(data.frame(marker_table(lef_out)) %>%
 ```
 
 #### Diet 2
-```{r, message=FALSE, warning=FALSE, fig.align='center', fig.height=7}
+```{r, message=FALSE, warning=FALSE, fig.align='center', fig.height=6}
 ps_MC2<-subset_samples(ps, Time %in% c("T3") & New_Diet %in% c("CTR", "MC2"))
 ps_MC2 <- prune_taxa(taxa_sums(ps_MC2) >0, ps_MC2)
 lef_out<-run_lefse(ps_MC2, group = "New_Diet", norm = "CPM", 
@@ -179,7 +179,7 @@ DT::datatable(data.frame(marker_table(lef_out)) %>%
 ```
 
 #### Diet 3
-```{r, message=FALSE, warning=FALSE, fig.align='center', fig.height=8}
+```{r, message=FALSE, warning=FALSE, fig.align='center', fig.height=6}
 ps_MN3<-subset_samples(ps, Time %in% c("T3") & New_Diet %in% c("CTR", "MN3"))
 ps_MN3 <- prune_taxa(taxa_sums(ps_MN3) >0, ps_MN3)
 lef_out<-run_lefse(ps_MN3, group = "New_Diet", norm = "CPM", 
@@ -386,36 +386,18 @@ idx.c <- which(colnames(MEs_R) == "ME0")
 
 MEs_R_noME0 <- MEs_R[-idx.r, -idx.c]
 
-
-MEs_R_noME0[upper.tri(MEs_R_noME0)] %>% 
-  as.data.frame() %>% 
-  dplyr::rename("correlation" = ".") %>% 
-  ggplot(aes(x=correlation)) + 
-  geom_histogram(bins = 20) +
-  theme_bw() +
-  #geom_density() + 
-  xlim(-1, 1) +
-  ggtitle(paste0(prefix,"ME correlation\n w/o ",prefix ,"ME0")) -> MEs_R_density
-
-pheatmap::pheatmap(MEs_R_noME0, color = colorRampPalette(c("Blue", "White", "Red"))(100),
-                   silent = T, 
-                   breaks = seq(-1,1,length.out = 101),
-                   treeheight_row = 5, 
-                   treeheight_col = 5,
-                   main = paste0(prefix,"ME correlation heatmap w/o ",prefix ,"ME0"),
-                   labels_row = paste0(prefix, rownames(MEs_R)),
-                   labels_col = paste0(prefix, colnames(MEs_R))) -> MEs_R_Corr
-
-cowplot::plot_grid(MEs_R_density, MEs_R_Corr$gtable, labels = c("D", "E"), label_size = plot_labeling_size, rel_widths = c(0.6, 1)) -> density_eigen
 ```
 
 
-```{r,  message=FALSE, warning=FALSE, fig.show='hide'}
+```{r,  message=FALSE, warning=FALSE, fig.show='hide', eval=FALSE}
 all(rownames(metabolites_Lipidomics) == rownames(MEs))
 dim(metabolites_Lipidomics) %>% paste0(c(" samples", " metabolites_Lipidomics"))
 kME <- bicor(metabolites_Lipidomics, MEs, maxPOutliers = 0.05)
-dim(kME) %>% paste0(c(" metabolites_Lipidomics", " modules"))
+dim(kME) %>% paste0(c("metabolites_Lipidomics", " modules"))
+```
 
+
+```{r,  message=FALSE, warning=FALSE, fig.show='hide', eval=FALSE}
 intra_cor <- c()
 for (i in 1:ncol(metabolites_Lipidomics)) {
   m <- stage2results_Lipidomics$modules$colors[i]
@@ -430,7 +412,10 @@ for (i in 1:ncol(metabolites_Lipidomics)) {
 
 idx <- which(is.na(intra_cor))
 intra_cor <- intra_cor[-idx]
+```
 
+
+```{r,  message=FALSE, warning=FALSE, fig.show='hide', eval=FALSE}
 plot(density(intra_cor), main = "Correlations with module-eigenmetabolites_HILIC (within module correlation)\nNo ME0", xlim = c(-1,1))
 ```
 
@@ -464,7 +449,7 @@ ggplot.list <- ggplot.list[ggplot.list %>% names() %>% sub("ME", "", .) %>% as.n
 
 cowplot::plot_grid(plotlist = ggplot.list, ncol = 6) -> density_all_plot
 # comine to one plot
-cowplot::plot_grid(si_mc_plot , density_eigen, ncol = 1, rel_heights = c(0.8,1)) -> part_1
+cowplot::plot_grid(si_mc_plot) -> part_1
 cowplot::plot_grid(part_1, module_size_barplot, labels = c("", "C"), label_size = plot_labeling_size, rel_widths = c(1,0.5)) -> part_2
 cowplot::plot_grid(part_2, density_all_plot, ncol = 1, rel_heights = c(0.8,1), labels = c("", "F"), label_size = plot_labeling_size)
 ```
