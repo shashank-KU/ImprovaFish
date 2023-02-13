@@ -57,7 +57,7 @@ metatranscriptomics <- t(assay(vst(dds_metatranscriptomics)))
 ```
 
 ### WGCNA analysis
-```{r}
+```{r, eval=FALSE}
 dim(metatranscriptomics) %>% paste(c("Samples", "metatranscriptomics"))
 powers <- c(c(1:10), seq(from = 12, to=20, by=2))
 sft <- pickSoftThreshold(metatranscriptomics, 
@@ -65,9 +65,12 @@ sft <- pickSoftThreshold(metatranscriptomics,
                          verbose = 1, 
                          networkType = "signed",
                          corFn= "bicor")
+saveRDS(sft, "/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/OmicsIntegration/sft.rds")
+```
 
 
-
+```{r, fig.align='center'}
+sft <- readRDS("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/OmicsIntegration/sft.rds")
 idx <- min(which((-sign(sft$fitIndices[,3])*sft$fitIndices[,2]) > 0.90))
 if(is.infinite(idx)){
   idx <- min(which((-sign(sft$fitIndices[,3])*sft$fitIndices[,2]) > 0.80))
@@ -122,7 +125,7 @@ si_mc_plot
 ```
 
 
-```{r, warning = FALSE, message = FALSE, results='hide'}
+```{r, warning = FALSE, message = FALSE, results='hide', eval=FALSE}
 modules.omics.MetaTrans <- blockwiseModules(metatranscriptomics, 
                                     power = st, 
                                     networkType = "signed", 
@@ -139,7 +142,7 @@ modules.omics.MetaTrans <- blockwiseModules(metatranscriptomics,
                                     #pamStage = pam_stage, 
                                     #pamRespectsDendro = TRUE,
                                     #replaceMissingAdjacencies = TRUE,
-                                    #nThreads = 10,
+                                    nThreads = 10,
                                     numericLabels = TRUE,
                                     saveTOMs = FALSE,
                                     saveTOMFileBase = "HOST_TOM",
@@ -148,15 +151,24 @@ modules.omics.MetaTrans <- blockwiseModules(metatranscriptomics,
 ```
 
 
-```{r}
+```{r, eval=FALSE}
 hubs <- chooseTopHubInEachModule(metatranscriptomics, modules.omics.MetaTrans$colors, power = st, omitColors = "0")
 stage2results_MetaTrans <- list(modules = modules.omics.MetaTrans, 
                         hubs = hubs)
+saveRDS(stage2results_MetaTrans, "/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/OmicsIntegration/stage2results_MetaTranscriptomics.rds")
+saveRDS(modules.omics.MetaTrans, "/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/OmicsIntegration/modules.omics.MetaTrans.rds")
+
 ```
 
-
 ```{r}
-# Convert labels to colors for plotting
+
+modules.omics.MetaTrans <- readRDS("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/OmicsIntegration/modules.omics.MetaTrans.rds")
+stage2results_MetaTrans <- readRDS("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/OmicsIntegration/stage2results_MetaTranscriptomics.rds")
+
+```
+
+Convert labels to colors for plotting
+```{r}
 merged_colors <- labels2colors(stage2results_MetaTrans$modules$colors)
 n_modules <- unique(merged_colors) %>% length()
 
@@ -256,7 +268,6 @@ for (i in 1:ncol(metatranscriptomics)) {
 idx <- which(is.na(intra_cor))
 intra_cor <- intra_cor[-idx]
 
-plot(density(intra_cor), main = "Correlations with module-eigenmetatranscriptomics (within module correlation)\nNo ME0", xlim = c(-1,1))
 ```
 
 
@@ -290,8 +301,7 @@ cowplot::plot_grid(plotlist = ggplot.list, ncol = 6) -> density_all_plot
 ```
 
 
-```{r}
-# comine to one plot
+```{r, fig.align='center', fig.width=14, fig.height=14}
 cowplot::plot_grid(si_mc_plot , density_eigen, ncol = 1, rel_heights = c(0.8,1)) -> part_1
 cowplot::plot_grid(part_1, module_size_barplot, labels = c("", "C"), label_size = plot_labeling_size, rel_widths = c(1,0.5)) -> part_2
 cowplot::plot_grid(part_2, density_all_plot, ncol = 1, rel_heights = c(0.8,1), labels = c("", "F"), label_size = plot_labeling_size)
@@ -311,6 +321,7 @@ annot_function_metatrans <- annot_function_metatrans[, c("ID", "kegg_hit", "unir
 ```
 
 #### Time point (T1)
+##### Diet 1
 ```{r}
 res <- results(dds_metatranscriptomics,
                contrast = list("groupT1mc1","groupT1ctr"))
@@ -326,7 +337,7 @@ DT::datatable(res_tbl)
 paste("Total number of upregulated transcripts is",length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0])[1],"and downregulated is",length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0])[1])
 ```
 
-
+##### Diet 2
 ```{r}
 res <- results(dds_metatranscriptomics,
                contrast = list("groupT1mc2","groupT1ctr"))
@@ -341,7 +352,7 @@ DT::datatable(res_tbl)
 paste("Total number of upregulated transcripts is",length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0])[1],"and downregulated is",length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0])[1])
 ```
 
-
+##### Diet 3
 ```{r}
 res <- results(dds_metatranscriptomics,
                contrast = list("groupT1mn3","groupT1ctr"))
@@ -357,6 +368,7 @@ paste("Total number of upregulated transcripts is",length(res_tbl$log2FoldChange
 ```
 
 #### Time point (T2)
+##### Diet 1
 ```{r}
 res <- results(dds_metatranscriptomics,
                contrast = list("groupT2mc1","groupT2ctr"))
@@ -370,7 +382,7 @@ res_tbl <- merge(res_tbl, annot_function_metatrans, by.x = "ENSEMBL", by.y = "ID
 DT::datatable(res_tbl)
 paste("Total number of upregulated transcripts is",length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0])[1],"and downregulated is",length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0])[1])
 ```
-
+##### Diet 2
 ```{r}
 res <- results(dds_metatranscriptomics,
                contrast = list("groupT2mc2","groupT2ctr"))
@@ -386,7 +398,7 @@ DT::datatable(res_tbl)
 paste("Total number of upregulated transcripts is",length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0])[1],"and downregulated is",length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0])[1])
 ```
 
-
+##### Diet 3
 ```{r}
 res <- results(dds_metatranscriptomics,
                contrast = list("groupT2mn3","groupT2ctr"))
@@ -402,6 +414,7 @@ paste("Total number of upregulated transcripts is",length(res_tbl$log2FoldChange
 ```
 
 #### Time point (T3)
+##### Diet 1
 ```{r}
 res <- results(dds_metatranscriptomics,
                contrast = list("groupT3mc1","groupT3ctr"))
@@ -416,7 +429,7 @@ DT::datatable(res_tbl)
 paste("Total number of upregulated transcripts is",length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0])[1],"and downregulated is",length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0])[1])
 ```
 
-
+##### Diet 2
 ```{r}
 res <- results(dds_metatranscriptomics,
                contrast = list("groupT3mc2","groupT3ctr"))
@@ -431,7 +444,7 @@ DT::datatable(res_tbl)
 paste("Total number of upregulated transcripts is",length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0])[1],"and downregulated is",length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0])[1])
 ```
 
-
+##### Diet 3
 ```{r}
 res <- results(dds_metatranscriptomics,
                contrast = list("groupT3mn3","groupT3ctr"))
@@ -470,7 +483,7 @@ for(treatment in c("T1", "T2", "T3")){
     df <- rbind(df, c(sample_name,a))
   }
 }
-names(df) <- c("Groups", "Differentially expressed genes")
+names(df) <- c("Groups", "DEGs")
 DT::datatable(df)
 ```
 

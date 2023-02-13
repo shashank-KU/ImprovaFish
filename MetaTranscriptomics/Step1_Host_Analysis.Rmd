@@ -16,13 +16,17 @@ output:
 options(tinytex.verbose = TRUE)
 ```
 
+```{r, include=FALSE}
+options(knitr.duplicate.label = 'allow')
+
+```
+
 ```{r setup, include=FALSE} 
 knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
 ```
 
 ## Step 1. Transcriptomics
-### Load all the packages used in the analysis
-
+### Load packages
 ```{r}
 library("stringr")
 library("dplyr")
@@ -39,6 +43,8 @@ library("GO.db")
 library("BiocParallel")
 library("DT")
 library("WGCNA")
+library("cowplot")
+library("gridExtra")
 ```
 
 Set seed as a precaution for reproducibility as some methods are non-deterministic.
@@ -49,14 +55,8 @@ prefix <- "h"
 save_TOM <- FALSE       # Can get rather big
 pam_stage <- FALSE      # Partitioning around medoids, tries to put more genes into modules where it is not directly clear from the dendrogram cutting.
 set_verbose = 1         # How much detail from the WGCNA functions? A higher number means more detail.
-omics_type = "rna"      # Just a name in the form of a string
-take_average = F        # Take the average of each sample group
 assoc_measure = "bicor"
 plot_labeling_size = 15
-max_block_size = 10000      #  13000 ~ 2-2.5 h |
-applied_norm = "TMM"        #  TPM or (TMM, choose raw counts below)
-applied_transf = "log2"     #  log2 or CLR
-applied_filter = "sd"       #  sd or mad
 theme_set(theme_bw())
 ```
 
@@ -68,7 +68,7 @@ omics_data_host <- host_gut_rawCounts_total1
 host_gut_mapping_file <- sample_info
 ```
 
-### Initial formatting of the data
+### Initial formatting
 Main idea of this chunk of code is make sure we have same number of samples in `countData` and samples in `colData` for `DESeq2`. Also the order of the samples in `colData` need to match the order of the samples in `countData`
 ```{r}
 #sample_info$New_Diet <- tolower(sample_info$New_Diet)
@@ -97,7 +97,6 @@ reorder_idx <- match(sample_info$ID_New, colnames(omics_data_host))
 omics_data_host <- omics_data_host[ , reorder_idx]
 all(colnames(omics_data_host) %in% sample_info$ID_New)
 all(colnames(omics_data_host) == sample_info$ID_New)
-table( sample_info$ID_New %in% colnames(omics_data_host))
 ```
 
 ### DESeq2 analysis
@@ -129,8 +128,11 @@ resultsNames(dds)
 
 annot_function <- read_tsv("/Users/shashankgupta/Desktop/ImprovAFish/Salmo_salar-GCA_905237065.2_gene_annotations.tsv")
 annot_function <- annot_function[, c("gene_id", "v2.gene_id.NCBI","v2.gene_name.ensembl", "v2.product")]
+```
 
-# T1
+#### Time point 1 (T1)
+##### Diet 1
+```{r}
 res <- results(dds,
                contrast = list("groupT1MC1","groupT1CTR"))
 table(res$padj < 0.05)
@@ -145,14 +147,13 @@ DT::datatable(res_tbl)
 # res_tbl %>% 
 #   filter(log2FoldChange > 0) %>%
 #   select(v2.product)
-
-length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
-length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
+# length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
+# length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
 
 
 ```
 
-
+##### Diet 2
 ```{r}
 res <- results(dds,
                contrast = list("groupT1MC2","groupT1CTR"))
@@ -166,12 +167,12 @@ DT::datatable(res_tbl)
 # res_tbl %>% 
 #   filter(log2FoldChange > 0) %>%
 #   select(v2.product)
-
-length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
-length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
+# 
+# length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
+# length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
 ```
 
-
+##### Diet 3
 ```{r}
 res <- results(dds,
                contrast = list("groupT1MN3","groupT1CTR"))
@@ -186,12 +187,13 @@ DT::datatable(res_tbl)
 # res_tbl %>% 
 #   filter(log2FoldChange > 0) %>%
 #   select(v2.product)
-
-length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
-length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
+# 
+# length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
+# length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
 ```
 
-
+#### Time point 2 (T2)
+##### Diet 1
 ```{r}
 # T2
 res <- results(dds,
@@ -202,12 +204,12 @@ res_tbl <- as_tibble(res, rownames = "ENSEMBL") %>%
   filter(padj <0.05)%>%
   arrange(padj) 
 DT::datatable(res_tbl)
-
-length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
-length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
+# 
+# length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
+# length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
 ```
 
-
+##### Diet 2
 ```{r}
 res <- results(dds,
                contrast = list("groupT2MC2","groupT2CTR"))
@@ -217,12 +219,12 @@ res_tbl <- as_tibble(res, rownames = "ENSEMBL") %>%
   filter(padj <0.05)%>%
   arrange(padj) 
 DT::datatable(res_tbl)
-
-length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
-length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
+# 
+# length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
+# length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
 ```
 
-
+##### Diet 3
 ```{r}
 res <- results(dds,
                contrast = list("groupT2MN3","groupT2CTR"))
@@ -232,14 +234,14 @@ res_tbl <- as_tibble(res, rownames = "ENSEMBL") %>%
   filter(padj <0.05)%>%
   arrange(padj) 
 DT::datatable(res_tbl)
-
-length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
-length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
+# 
+# length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
+# length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
 ```
 
-
+#### Time point 3 (T3)
+##### Diet 1
 ```{r}
-# T3
 res <- results(dds,
                contrast = list("groupT3MC1","groupT3CTR"))
 table(res$padj < 0.05)
@@ -247,18 +249,19 @@ table(res$padj < 0.05)
 res_tbl <- as_tibble(res, rownames = "ENSEMBL") %>%
   filter(padj <0.05)%>%
   arrange(padj) 
-DT::datatable(res_tbl)
 
 res_tbl <- merge(res_tbl, annot_function, by.x = "ENSEMBL", by.y = "gene_id", all.x = TRUE )
+DT::datatable(res_tbl)
+
 # res_tbl %>% 
 #   filter(log2FoldChange > 0) %>%
 #   select(v2.product)
-
-length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
-length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
+# 
+# length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
+# length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
 ```
 
-
+##### Diet 2
 ```{r}
 res <- results(dds,
                contrast = list("groupT3MC2","groupT3CTR"))
@@ -267,18 +270,19 @@ table(res$padj < 0.05)
 res_tbl <- as_tibble(res, rownames = "ENSEMBL") %>%
   filter(padj <0.05)%>%
   arrange(padj) 
-DT::datatable(res_tbl)
 
 res_tbl <- merge(res_tbl, annot_function, by.x = "ENSEMBL", by.y = "gene_id", all.x = TRUE )
+DT::datatable(res_tbl)
+
 # res_tbl %>% 
 #   filter(log2FoldChange > 0) %>%
 #   select(v2.product)
-
-length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
-length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
+# 
+# length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
+# length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
 ```
 
-
+##### Diet 3
 ```{r}
 res <- results(dds,
                contrast = list("groupT3MN3","groupT3CTR"))
@@ -287,15 +291,15 @@ table(res$padj < 0.05)
 res_tbl <- as_tibble(res, rownames = "ENSEMBL") %>%
   filter(padj <0.05)%>%
   arrange(padj) 
+res_tbl <- merge(res_tbl, annot_function, by.x = "ENSEMBL", by.y = "gene_id", all.x = TRUE )
 DT::datatable(res_tbl)
 
-res_tbl <- merge(res_tbl, annot_function, by.x = "ENSEMBL", by.y = "gene_id", all.x = TRUE )
 # res_tbl %>% 
 #   filter(log2FoldChange > 0) %>%
 #   select(v2.product)
-
-length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
-length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
+# 
+# length(res_tbl$log2FoldChange[res_tbl$log2FoldChange>0]) # count positive elements
+# length(res_tbl$log2FoldChange[res_tbl$log2FoldChange<0]) # count negative elements
 ```
 
 
@@ -323,23 +327,29 @@ for(treatment in c("T1", "T2", "T3")){
     df <- rbind(df, c(sample_name,a))
   }
 }
-#names(df) <- c("Group", "a1", "a2", "a3")
+names(df) <- c("Groups", "DEGs (up-regulated)")
 df
 
 ```
 
-
+## Step 2. Host-microbiome interactions
 ### WGCNA analysis
 ```{r}
 omics_data_host <- t(assay(vst(dds)))
 dim(omics_data_host) %>% paste(c("Samples", "Genes"))
+```
+
+```{r, results='hide'}
 powers <- c(c(1:10), seq(from = 12, to=20, by=2))
 sft <- pickSoftThreshold(omics_data_host, 
                          powerVector = powers, 
                          verbose = set_verbose, 
                          networkType = "signed",
                          corFn= "bicor")
+```
 
+
+```{r, fig.align='center'}
 idx <- min(which((-sign(sft$fitIndices[,3])*sft$fitIndices[,2]) > 0.90))
 if(is.infinite(idx)){
   idx <- min(which((-sign(sft$fitIndices[,3])*sft$fitIndices[,2]) > 0.80))
@@ -389,7 +399,6 @@ data.frame(Indices = sft$fitIndices[,1],
 
 
 cowplot::plot_grid(scale_independence_plot, mean_connectivity_plot, ncol = 2, align = "h", labels = c("A", "B"), label_size = plot_labeling_size) -> si_mc_plot
-
 si_mc_plot
 
 ```
@@ -422,15 +431,16 @@ modules.omics_X <- blockwiseModules(omics_data_host,
 
 
 ```{r}
-rownames(modules.omics_X$MEs) <- rownames(omics_data_host)
-names(modules.omics_X$colors) <- colnames(omics_data_host)
-names(modules.omics_X$unmergedColors) <- colnames(omics_data_host)
-
 hubs <- chooseTopHubInEachModule(omics_data_host, modules.omics_X$colors, power = st, omitColors = "0")
 
 stage2results_X <- list(modules = modules.omics_X, 
                       hubs = hubs)
 
+saveRDS(stage2results_X, "/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/OmicsIntegration/stage2results_Transcriptomics.rds")
+```
+
+
+```{r, fig.align='center'}
 # Convert labels to colors for plotting
 merged_colors <- labels2colors(stage2results_X$modules$colors)
 n_modules <- unique(merged_colors) %>% length()
@@ -443,8 +453,6 @@ table(stage2results_X$modules$colors) %>%
   as.data.frame() %>% 
   dplyr::rename(Module = Var1, Size = Freq) %>%
   dplyr::mutate(Module_color = labels2colors(as.numeric(as.character(Module)))) -> module_size
-
-
 
 module_size %>% 
   ggplot(aes(x = Module, y = Size, fill = Module)) +
@@ -548,8 +556,8 @@ part_3
 ```
 
 
+This code takes the results of a omics data and extracts the "hubs", or most highly connected genes in the network, for each module.
 ```{r}
-#Hub genes
 stage2results_X$hubs %>% 
   as.data.frame() %>% 
   dplyr::rename("gene_id" = ".") %>% 
@@ -558,12 +566,11 @@ stage2results_X$hubs %>%
 DT::datatable(top_genes)
 ```
 
-### Statistical analysis to find the most significant MEs
+### Statistical analysis
+Linear regression analysis on the module eigengenes (principal components) from omics data, using the limma package. The sample information is loaded and the factors 'Time', 'New_Diet', and 'Day' are created based on the sample IDs. The design matrix for the regression is created using the 'Day' factor, and a linear model fit is performed on the transposed module eigengenes. The regression results are then run through an empirical Bayesian analysis. The topTable function is used to extract the regression statistics and create a data frame with the module names as the row names.
 ```{r}
-# Further downstream analysis
 #modules.omics_X.backup <- modules.omics_X 
 module_eigengenes <- modules.omics_X$MEs
-
 all.equal(sample_info$ID_New, rownames(module_eigengenes))
 sample_info %>% 
   mutate(Time = factor(Time)) %>% 
@@ -585,77 +592,71 @@ stats_df <- limma::topTable(fit, number = ncol(module_eigengenes)) %>%
 DT::datatable(stats_df)
 ```
 
-
+Let’s make plot of module 21
 ```{r, warning=FALSE}
-#Let’s make plot of module 7
 module_df <- module_eigengenes %>%
   tibble::rownames_to_column("ID_New") %>%
-  # Here we are performing an inner join with a subset of metadata
   dplyr::inner_join(meta %>%
                       dplyr::select(ID_New, Day, Time, New_Diet),
                     by = c("ID_New" = "ID_New"))
 
 
 ggplot(module_df, aes(x = Time, y = ME21, color = Day)) +
-  # a boxplot with outlier points hidden (they will be in the sina plot)
   geom_boxplot(width = 0.2, outlier.shape = NA) +
-  # A sina plot to show all of the individual data points
   ggforce::geom_sina(maxwidth = 0.3) +
   theme_classic() + facet_wrap("New_Diet")
 
 
 ggplot(module_df, aes(x = Day, y = ME21, color = Time)) +
-  # a boxplot with outlier points hidden (they will be in the sina plot)
   geom_boxplot(width = 0.2, outlier.shape = NA) +
-  # A sina plot to show all of the individual data points
   ggforce::geom_sina(maxwidth = 0.3) +
   theme_classic()
+```
 
-
-#What genes are a part of module 7?
+What genes are a part of module 21?
+```{r, warning=FALSE}
 gene_module_key <- tibble::enframe(modules.omics_X$colors, name = "gene", value = "module") %>%
   # Let's add the `ME` part so its more clear what these numbers are and it matches elsewhere
   dplyr::mutate(module = paste0("ME", module))
 
 # gene_module_key %>%
 #   dplyr::filter(module == "ME21") 
-
 DT::datatable(gene_module_key)
 ```
 
 
 ### Functional analysis
-```{r}
-#GO term and KEGG pathway enrichment of Atlantic salmon genes using the clusterProfiler package
-#https://gitlab.com/sandve-lab/salmon-go-and-kegg-enrichment/-/blob/master/Ssal_GO_and_KEGG_ClusterProfiler.Rmd
+The code in R connects to the AnnotationHub package and selects OrgDb annotations for the species "Salmo salar". It creates two objects, SsalOrg, by subsetting and extracting the desired annotations from the ah object.
+```{r, warning=FALSE, message=FALSE}
 # get OrgDb from AnnotationHub
 ah <- AnnotationHub()
-# list OrgDb's available for Salmo salar
 SsalOrg <- subset(ah, ah$species == "Salmo salar" & ah$rdataclass=="OrgDb")
 SsalOrg <- ah[["AH96017"]]
+```
 
+This script performs gene enrichment analysis on multiple modules of genes. The modules of genes are generated from omics data, and the gene annotations are read from a csv file. The probes from the omics data are matched with the gene IDs from the annotations, and the LocusLink IDs are obtained. The unique modules are then selected, and their LocusLink IDs are written into separate text files. Finally, gene ontology (GO) and KEGG pathway analysis are performed for each module using the enrichGO and enrichKEGG functions, respectively. The results are then visualized using the dotplot function.
 
-# Extract each modules information and NCBI gene ID associated with them 
+```{r, warning=FALSE, message=FALSE}
 moduleLabels <- modules.omics_X$colors
 moduleColors <- labels2colors(modules.omics_X$colors)
 table(moduleColors)
-table(moduleLabels)
-
-table(moduleColors, moduleLabels)
+# table(moduleLabels)
+# table(moduleColors, moduleLabels)
 
 MEs <- modules.omics_X$MEs
 geneTree <- modules.omics_X$dendrograms[[1]]
 
 
 #https://gitlab.com/garethgillard/ssalv3annotation
-annot1 <- read.csv("/Users/shashankgupta/Desktop/ImprovAFish/ImprovAFish_Final/Salmo_salar-GCA_905237065.2_gene_annotations.csv", header = TRUE)
+annot1 <- read.csv("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/Input/Salmo_salar-GCA_905237065.2_gene_annotations.csv", header = TRUE)
+
 probes <- colnames(omics_data_host) 
 probes2annot <- match(probes, annot1$gene_id)
 allLLIDs <- annot1$v2.gene_id.NCBI[probes2annot]
 
 intModules <- unique(moduleColors)
-
-setwd("/Users/shashankgupta/Desktop/ImprovAFish/ImprovAFish/resGO/")
+dir.create("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/MetaTranscriptomics/intermediate_files")
+setwd("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/MetaTranscriptomics/intermediate_files")
 for (module in intModules) 
 {
   # Select module probes 
@@ -670,113 +671,52 @@ for (module in intModules)
 fileName = paste("LocusLinkIDs-all.txt", sep="");
 write.table(as.character(allLLIDs), file = fileName, row.names = FALSE, col.names = FALSE)
 
-
-setwd("/Users/shashankgupta/Desktop/ImprovAFish/ImprovAFish/resGO/")
-table(moduleColors)
+#table(moduleColors)
 list_names <- unique(moduleColors)
-#rm(list=ls(pattern="^res."))
-#rm(list=ls(pattern="*_resGO_dotplot"))
-
 all.df <- read.table("LocusLinkIDs-all.txt")
 all.df$V1 <- as.character(all.df$V1)
 for (i in list_names){
   assign(paste(i,"_df", sep=""), read.table(paste0("LocusLinkIDs-",i,".txt")))
-  assign(paste("resGO_",i, sep=""), enrichGO(gene = get(paste0(i,"_df"))$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05))
+  assign(paste("resGO_",i, sep=""), enrichGO(gene = get(paste0(i,"_df"))$V1, ont = "BP", universe = all.df$V1, OrgDb = "SsalOrg", pvalueCutoff  = 0.05,qvalueCutoff  = 0.05))
   assign(paste("resGO_dotplot_",i, sep=""), dotplot(get(paste0("resGO_",i))))
   assign(paste("resKEGG_",i, sep=""), enrichKEGG(gene = get(paste0(i,"_df"))$V1, universe = all.df$V1,  organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05))
   assign(paste("resKEGG_dotplot_",i, sep=""), dotplot(get(paste0("resKEGG_",i))))
 }
-
-resGO_dot_plots <- ls(pattern="resGO_dotplot_*")
-resGO_dot_plots <- noquote(resGO_dot_plots)
-
-resKEGG_dot_plots <- ls(pattern="resKEGG_dotplot_*")
-
-# in r make plots one by one and save it in a loop r from  resGO_dot_plots
-# resGO_dot_plots <- c(resGO_dotplot_black,  resGO_dotplot_blue)
-# pdf("resGO_dotplot_black.pdf")
-# resGO_dotplot_black
-# dev.off()
-# 
-# pdf("resGO_dotplot_blue.pdf")
-# resGO_dotplot_blue
-# dev.off()
-# 
-# 
-# # Create a for loop to run through the list of plots
-# for (i in resGO_dot_plots) {
-#   
-#   # Assign the current plot to the variable plot
-#   plot <- noquote(i)
-#   
-#   # Create the file name and save the plot as PDF
-#   filename <- paste0(i, ".pdf", sep = "")
-#   pdf(filename)
-#    
-#   
-# }
 ```
 
 
+```{r, error=FALSE, warning=FALSE, message=FALSE, figures-side, fig.show="hold", out.width="50%", fig.cap="Gene Ontology (GO) analysis"}
+# save all the plots
+setwd("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/MetaTranscriptomics/intermediate_files")
+resGO_dot_plots <- ls(pattern="resGO_dotplot_*")
+
+# saving PNG
+for (i in 1:length(resGO_dot_plots)) {
+  tryCatch({
+    png(paste0(resGO_dot_plots[i], ".png"))
+    print(get(resGO_dot_plots[i]))
+    dev.off()
+  }, error = function(e) {
+    print(paste("Error printing", resGO_dot_plots[i], ":", e))
+    file.remove(paste0(resGO_dot_plots[i], ".png"))
+  })
+}
+```
 
 
+```{r, error=FALSE, warning=FALSE, message=FALSE,fig.show="hold", out.width="50%", fig.cap="KEGG pathway analysis"}
+resKEGG_dot_plots <- ls(pattern="resKEGG_dotplot_*")
 
+# saving PNG
+for (i in 1:length(resKEGG_dot_plots)) {
+  tryCatch({
+    png(paste0(resKEGG_dot_plots[i], ".png"))
+    print(get(resKEGG_dot_plots[i]))
+    dev.off()
+  }, error = function(e) {
+    print(paste("Error printing", resKEGG_dot_plots[i], ":", e))
+    file.remove(paste0(resKEGG_dot_plots[i], ".png"))
+  })
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+```

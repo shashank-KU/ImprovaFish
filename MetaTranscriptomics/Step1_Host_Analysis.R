@@ -444,14 +444,15 @@ geneTree <- modules.omics_X$dendrograms[[1]]
 
 
 #https://gitlab.com/garethgillard/ssalv3annotation
-annot1 <- read.csv("../../ImprovAFish_Final/Salmo_salar-GCA_905237065.2_gene_annotations.csv", header = TRUE)
+annot1 <- read.csv("/Users/shashankgupta/Desktop/ImprovAFish/ImprovAFish_Final/Salmo_salar-GCA_905237065.2_gene_annotations.csv", header = TRUE)
+
 probes <- colnames(omics_data_host) 
 probes2annot <- match(probes, annot1$gene_id)
 allLLIDs <- annot1$v2.gene_id.NCBI[probes2annot]
 
 intModules <- unique(moduleColors)
 
-setwd("resGO/")
+setwd("/Users/shashankgupta/Desktop/ImprovAFish/ImprovAFish/resGO/")
 for (module in intModules) 
 {
   # Select module probes 
@@ -466,51 +467,91 @@ for (module in intModules)
 fileName = paste("LocusLinkIDs-all.txt", sep="");
 write.table(as.character(allLLIDs), file = fileName, row.names = FALSE, col.names = FALSE)
 
-
-setwd("../../ImprovAFish/resGO/")
-table(moduleColors)
+#table(moduleColors)
 list_names <- unique(moduleColors)
-#rm(list=ls(pattern="^res."))
-#rm(list=ls(pattern="*_resGO_dotplot"))
-
 all.df <- read.table("LocusLinkIDs-all.txt")
 all.df$V1 <- as.character(all.df$V1)
 for (i in list_names){
   assign(paste(i,"_df", sep=""), read.table(paste0("LocusLinkIDs-",i,".txt")))
-  assign(paste("resGO_",i, sep=""), enrichGO(gene = get(paste0(i,"_df"))$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05))
+  assign(paste("resGO_",i, sep=""), enrichGO(gene = get(paste0(i,"_df"))$V1, ont = "BP", universe = all.df$V1, OrgDb = "SsalOrg", pvalueCutoff  = 0.05,qvalueCutoff  = 0.05))
   assign(paste("resGO_dotplot_",i, sep=""), dotplot(get(paste0("resGO_",i))))
   assign(paste("resKEGG_",i, sep=""), enrichKEGG(gene = get(paste0(i,"_df"))$V1, universe = all.df$V1,  organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05))
   assign(paste("resKEGG_dotplot_",i, sep=""), dotplot(get(paste0("resKEGG_",i))))
 }
 
 resGO_dot_plots <- ls(pattern="resGO_dotplot_*")
-resGO_dot_plots <- noquote(resGO_dot_plots)
-
 resKEGG_dot_plots <- ls(pattern="resKEGG_dotplot_*")
 
-# in r make plots one by one and save it in a loop r from  resGO_dot_plots
-# resGO_dot_plots <- c(resGO_dotplot_black,  resGO_dotplot_blue)
-# pdf("resGO_dotplot_black.pdf")
-# resGO_dotplot_black
-# dev.off()
-# 
-# pdf("resGO_dotplot_blue.pdf")
-# resGO_dotplot_blue
-# dev.off()
-# 
-# 
-# # Create a for loop to run through the list of plots
-# for (i in resGO_dot_plots) {
-#   
-#   # Assign the current plot to the variable plot
-#   plot <- noquote(i)
-#   
-#   # Create the file name and save the plot as PDF
-#   filename <- paste0(i, ".pdf", sep = "")
-#   pdf(filename)
-#    
-#   
-# }
+
+
+
+
+
+
+
+
+
+
+
+# save all the plots
+library(cowplot)
+library(gridExtra)
+
+# PNG
+plots <- ls(pattern = "^resKEGG_dotplot_.*")
+for (i in 1:length(plots)) {
+  tryCatch({
+    png(paste0(plots[i], ".png"))
+    print(get(plots[i]))
+    dev.off()
+  }, error = function(e) {
+    print(paste("Error printing", plots[i], ":", e))
+    file.remove(paste0(plots[i], ".png"))
+  })
+}
+
+
+
+# PDF
+dir.create("plots")
+setwd("plots/")
+library(plotflow)
+library(pdftools)
+# Get all the objects in the environment that start with the string "resKEGG_dotplot_"
+plots <- ls(pattern = "^resKEGG_dotplot_.*")
+for (i in 1:length(plots)) {
+  tryCatch({
+    pdf(paste0(plots[i], ".pdf"))
+    print(get(plots[i]))
+    dev.off()
+  }, error = function(e) {
+    print(paste("Error printing", plots[i], ":", e))
+    file.remove(paste0(plots[i], ".pdf"))
+  })
+}
+
+pdf_list <- list() 
+path <- getwd() 
+pdf_list <- list.files(path = path, pattern = "*.pdf", full.names = TRUE)
+pdftools::pdf_combine(input = pdf_list,
+                      output = "merge_resKEGG.pdf")
+
+# Remove the individual PDF files
+pdf_files_to_remove <- setdiff(pdf_list, "merge_resKEGG.pdf")
+file.remove(pdf_files_to_remove)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #Deseq2 analysis
 library(DESeq2)
