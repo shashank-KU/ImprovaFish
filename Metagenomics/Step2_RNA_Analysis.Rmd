@@ -266,7 +266,7 @@ PCoA_bray_plot<- plot_ordination(
 psdata <- subset_samples(all.noncontam, Sample_or_Control=="True_Sample")
 psdata <- prune_taxa(taxa_sums(psdata) > 0, psdata)
 psdata
-
+saveRDS(psdata, "/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/Input/psdata.rds")
 ```
 
 ```{r echo=FALSE}
@@ -1074,7 +1074,7 @@ chosen_parameter_set <- parameter_sets$set_2
 
 ### Formatting the data
 ```{r}
-psdata.r1 <- filter_taxa(psdata.p, function(x) sum(x > 3) > (0.01*length(x)), TRUE)# Remove taxa not seen more than 3 times in at least 5% of samples
+psdata.r1 <- filter_taxa(psdata.p, function(x) sum(x > 4) > (0.01*length(x)), TRUE)# Remove taxa not seen more than 3 times in at least 5% of samples
 
 psdata.r1 <- transform_sample_counts(psdata.r1, function(x) x / sum(x) )
 
@@ -1213,7 +1213,8 @@ modules.omics.Y <- blockwiseModules(omics_data,
                                     saveTOMs = save_TOM,
                                     saveTOMFileBase = "TOM",
                                     verbose = 3,
-                                    maxBlockSize=8000, nThreads = 10)
+                                    maxBlockSize=8000,
+                                    nThreads = 10)
 ```
 
 

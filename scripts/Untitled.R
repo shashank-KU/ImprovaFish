@@ -163,5 +163,3 @@ plot_grid(p13, p14, labels = c('A', 'B' ), label_size = 12, ncol = 1)
 
 
 
-
-
