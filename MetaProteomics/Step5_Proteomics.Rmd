@@ -92,6 +92,15 @@ dat$New_Diet <- toupper(dat$Diet)
 ps <- merge_phyloseq(otu_table(OTU), sample_data(dat))
 tt <- as.data.frame(row.names(Proteomics))
 row.names(tt) <- tt$`row.names(Proteomics)`
+# Replace ".." with a space
+tt$`row.names(Proteomics)` <- gsub("\\.\\.", " ", tt$`row.names(Proteomics)`)
+# Replace "." with a space
+tt$`row.names(Proteomics)` <- gsub("\\.", " ", tt$`row.names(Proteomics)`)
+# Split column into two by "NP_" and "XP_"
+tt <- cbind(tt, do.call("rbind", strsplit(as.character(tt$`row.names(Proteomics)`), "(NP_|XP_)")))
+colnames(tt)[2:3] <- c("col_name_1", "col_name_2")
+tt$`row.names(Proteomics)` <- NULL
+tt$col_name_2 <- NULL
 colnames(tt)[1] <- "Kingdom"
 tax_table(ps) <- as.matrix(tt)
 ```
@@ -101,8 +110,8 @@ tax_table(ps) <- as.matrix(tt)
 set.seed(12345)
 ps_MC1<-subset_samples(ps, New_Diet %in% c("CTR", "MC1"))
 ps_MC1 <- prune_taxa(taxa_sums(ps_MC1) >0, ps_MC1)
-lef_out<-run_lefse(ps_MC1, group = "New_Diet", norm = "CPM", 
-                   kw_cutoff = 0.05, lda_cutoff = 1.75, taxa_rank = "none")
+lef_out<-run_lefse(ps_MC1, group = "New_Diet", norm = "CPM",
+                   kw_cutoff = 0.05, lda_cutoff = 1.75, taxa_rank = "Kingdom")
 
 plot_ef_bar(lef_out)
 table(marker_table(lef_out)$enrich_group)
@@ -125,7 +134,7 @@ table(sample_data(ps_MC2)$Diet)
 
 
 lef_out<-run_lefse(ps_MC2, group = "New_Diet", norm = "CPM", 
-                   kw_cutoff = 0.05, lda_cutoff = 1.75, taxa_rank = "none")
+                   kw_cutoff = 0.05, lda_cutoff = 1.75, taxa_rank = "Kingdom")
 
 plot_ef_bar(lef_out)
 table(marker_table(lef_out)$enrich_group)
@@ -143,7 +152,7 @@ table(sample_data(ps_MN3)$New_Diet)
 
 
 lef_out<-run_lefse(ps_MN3, group = "New_Diet", norm = "CPM", 
-                   kw_cutoff = 0.05, lda_cutoff = 1.75, taxa_rank = "none")
+                   kw_cutoff = 0.05, lda_cutoff = 1.75, taxa_rank = "Kingdom")
 
 plot_ef_bar(lef_out)
 table(marker_table(lef_out)$enrich_group)
