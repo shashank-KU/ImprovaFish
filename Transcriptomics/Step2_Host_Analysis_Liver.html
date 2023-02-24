@@ -4901,6 +4901,21 @@ for (i in 1:length(resKEGG_dot_plots)) {
     file.remove(paste0(resKEGG_dot_plots[i], &quot;.png&quot;))
   })
 }</code></pre>
+<pre class="r"><code>setwd(&quot;/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/Transcriptomics/intermediate_files/Liver&quot;)
+resKEGG_dot_plots &lt;- ls(pattern=&quot;resKEGG_dotplot_*&quot;)
+
+# saving PNG
+for (i in 1:length(resKEGG_dot_plots)) {
+  tryCatch({
+    png(paste0(resKEGG_dot_plots[i], &quot;.png&quot;))
+    print(get(resKEGG_dot_plots[i]))
+    dev.off()
+    knitr::include_graphics(paste0(resKEGG_dot_plots[i], &quot;.png&quot;))
+  }, error = function(e) {
+    # print(paste(&quot;Error printing&quot;, resKEGG_dot_plots[i], &quot;:&quot;, e))
+    file.remove(paste0(resKEGG_dot_plots[i], &quot;.png&quot;))
+  })
+}</code></pre>
 </div>
 </div>
 
