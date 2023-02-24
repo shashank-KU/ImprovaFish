@@ -46,7 +46,7 @@ mSet<-ReplaceMin(mSet)
 mSet<-SanityCheckMeta(mSet, 1)
 mSet<-SetDataTypeOfMeta(mSet)
 mSet<-PreparePrenormData(mSet)
-mSet<-Normalization(mSet, "MeanNorm", "SrNorm", "NULL", ratio=FALSE, ratioNum=20)
+mSet<-Normalization(mSet, "MedianNorm", "SrNorm", "NULL", ratio=FALSE, ratioNum=20)
 Proteomics <- data.frame(mSet$dataSet$norm)
 Proteomics <- t(Proteomics)
 ```

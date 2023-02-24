@@ -57,6 +57,7 @@ filter.sig.mod <- 2
 ```{r}
 wgcna_metatranscriptomics <- readRDS("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/OmicsIntegration/stage2results_MetaTranscriptomics.rds")
 wgcna_transcriptomics <- readRDS("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/OmicsIntegration/stage2results_Transcriptomics.rds")
+wgcna_transcriptomics_Liver <- readRDS("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/OmicsIntegration/stage2results_Transcriptomics_Liver.rds")
 wgcna_metagenomics <- readRDS("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/OmicsIntegration/stage2results_Metagenomics.rds")
 wgcna_metabolomics_HILIC <- readRDS("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/OmicsIntegration/stage2results_HILIC.rds")
 wgcna_metabolomics_RP <- readRDS("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/OmicsIntegration/stage2results_RP.rds")
@@ -91,7 +92,7 @@ remove_and_average_MEs <- function(input_data, take_average) {
 
 ```
 
-# Step 2. Transcriptomics
+# Step 2. Transcriptomics (Gut)
 ```{r}
 wgcna_transcriptomics_eigengenes <- remove_and_average_MEs(input_data = wgcna_transcriptomics, take_average = T)
 ```
