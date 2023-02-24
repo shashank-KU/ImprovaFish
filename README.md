@@ -78,9 +78,9 @@ For all the commands used for downstream analysis for [metagenomics](https://sha
 
 
 ### Step 3. Transcriptomics
-For all the commands used for downstream analysis for **gut** [trascriptomics](https://shashank-ku.github.io/ImprovaFish/MetaTranscriptomics/Step1_Host_Analysis.html)
+For all the commands used for downstream analysis for **gut** [trascriptomics](https://shashank-ku.github.io/ImprovaFish/Transcriptomics/Step1_Host_Analysis.html)
 
-For all the commands used for downstream analysis for **liver** [trascriptomics](https://shashank-ku.github.io/ImprovaFish/MetaTranscriptomics/Step1_Host_Analysis.html)
+For all the commands used for downstream analysis for **liver** [trascriptomics](https://shashank-ku.github.io/ImprovaFish/Transcriptomics/Step1_Host_Analysis.html)
 
 ### Step 4. Metaproteomics 
 For all the commands used for downstream analysis for [metaproteomics](https://shashank-ku.github.io/ImprovaFish/MetaProteomics/Step5_Proteomics.html)
