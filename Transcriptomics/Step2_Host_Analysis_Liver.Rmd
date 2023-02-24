@@ -16,11 +16,6 @@ output:
 options(tinytex.verbose = TRUE)
 ```
 
-```{r, include=FALSE}
-options(knitr.duplicate.label = 'allow')
-
-```
-
 ```{r setup, include=FALSE} 
 knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
 ```
@@ -796,7 +791,7 @@ for (i in 1:length(resKEGG_dot_plots)) {
 ```
 
 
-```{r, fig.show='asis', echo=TRUE, error=FALSE, warning=FALSE, message=FALSE, out.width="50%", fig.cap="KEGG pathway analysis"}
+```{r}
 
 setwd("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/Transcriptomics/intermediate_files/Liver")
 resKEGG_dot_plots <- ls(pattern="resKEGG_dotplot_*")
@@ -813,7 +808,6 @@ for (i in 1:length(resKEGG_dot_plots)) {
     file.remove(paste0(resKEGG_dot_plots[i], ".png"))
   })
 }
-
 
 ```
 
