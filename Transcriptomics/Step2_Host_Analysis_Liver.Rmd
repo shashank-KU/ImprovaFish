@@ -16,9 +16,18 @@ output:
 options(tinytex.verbose = TRUE)
 ```
 
+```{r, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
 ```{r setup, include=FALSE} 
 knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+knitr::opts_knit$set(root.dir = '/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/Transcriptomics/intermediate_files/Liver/')
+
 ```
+
+
 
 ## Step 1. Transcriptomics (Liver)
 ### Load packages
@@ -42,6 +51,10 @@ library("cowplot")
 library("gridExtra")
 library("EnhancedVolcano")
 library("plyr")
+library("png")
+library("grid")
+library("gridExtra")
+
 ```
 
 Set seed as a precaution for reproducibility as some methods are non-deterministic.
@@ -152,7 +165,7 @@ df <- round(omics_data_host_Liver) %>%
   # The next steps require a data frame and round() returns a matrix
   as.data.frame() %>%
   # Only keep rows that have total counts above the cutoff
-  dplyr::filter(rowSums(.) >= 50000)
+  dplyr::filter(rowSums(.) >= 50)
 
 all(colnames(df) == rownames(sample_info))
 ```
@@ -662,7 +675,7 @@ DT::datatable(stats_df)
 ```
 
 Let’s make plot of module 17
-```{r, warning=FALSE}
+```{r, warning=FALSE, fig.align='center'}
 module_df <- module_eigengenes %>%
   tibble::rownames_to_column("ID_New") %>%
   dplyr::inner_join(meta %>%
@@ -706,6 +719,9 @@ SsalOrg <- ah[["AH96017"]]
 This script performs gene enrichment analysis on multiple modules of genes. The modules of genes are generated from omics data, and the gene annotations are read from a csv file. The probes from the omics data are matched with the gene IDs from the annotations, and the LocusLink IDs are obtained. The unique modules are then selected, and their LocusLink IDs are written into separate text files. Finally, gene ontology (GO) and KEGG pathway analysis are performed for each module using the enrichGO and enrichKEGG functions, respectively. The results are then visualized using the dotplot function.
 
 ```{r, warning=FALSE, message=FALSE}
+# if (!file.exists("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/Transcriptomics/intermediate_files/Liver")) {
+#   dir.create("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/Transcriptomics/intermediate_files/Liver") }
+#setwd("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/Transcriptomics/intermediate_files/Liver")
 moduleLabels <- modules.omics_X_Liver$colors
 moduleColors <- labels2colors(modules.omics_X_Liver$colors)
 table(moduleColors)
@@ -724,8 +740,7 @@ probes2annot <- match(probes, annot1$gene_id)
 allLLIDs <- annot1$v2.gene_id.NCBI[probes2annot]
 
 intModules <- unique(moduleColors)
-dir.create("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/Transcriptomics/intermediate_files/Liver")
-setwd("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/Transcriptomics/intermediate_files/Liver")
+
 for (module in intModules) 
 {
   # Select module probes 
@@ -754,11 +769,11 @@ for (i in list_names){
 ```
 
 
-```{r, fig.show='asis',echo=TRUE, error=FALSE, warning=FALSE, message=FALSE, figures-side, fig.show="hold", out.width="50%", fig.cap="Gene Ontology (GO) analysis"}
+```{r, error=FALSE, warning=FALSE, message=FALSE}
 # save all the plots
-setwd("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/Transcriptomics/intermediate_files/Liver")
+# dir.create("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/Transcriptomics/intermediate_files/Liver/GO")
+# setwd("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/Transcriptomics/intermediate_files/Liver/GO")
 resGO_dot_plots <- ls(pattern="resGO_dotplot_*")
-
 # saving PNG
 for (i in 1:length(resGO_dot_plots)) {
   tryCatch({
@@ -770,13 +785,29 @@ for (i in 1:length(resGO_dot_plots)) {
     file.remove(paste0(resGO_dot_plots[i], ".png"))
   })
 }
+
 ```
 
 
-```{r, fig.show='asis', echo=TRUE, error=FALSE, warning=FALSE, message=FALSE, out.width="50%", fig.cap="KEGG pathway analysis"}
-setwd("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/Transcriptomics/intermediate_files/Liver")
-resKEGG_dot_plots <- ls(pattern="resKEGG_dotplot_*")
+```{r, fig.height=25, message=FALSE, fig.width=12, fig.cap= '<div style="text-align:center; color:red; font-size: 14pt;">Gene Ontology (GO) analysis</div>'}
+# Set the working directory to the directory containing the PNG files
+# setwd("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/Transcriptomics/intermediate_files/Liver/GO")
 
+# Get a list of all PNG files in the directory
+png_files <- list.files(pattern = "^resGO_dotplot_.*\\.png$")
+
+# Read all PNG files into a list of raster objects
+raster_list <- lapply(png_files, readPNG)
+
+# Combine all raster objects into a single plot using gridExtra::grid.arrange()
+plot <- grid.arrange(grobs = lapply(raster_list, rasterGrob), ncol = 3)
+dev.off()
+
+```
+
+```{r, error=FALSE, warning=FALSE, message=FALSE}
+# setwd("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/Transcriptomics/intermediate_files/Liver")
+resKEGG_dot_plots <- ls(pattern="resKEGG_dotplot_*")
 # saving PNG
 for (i in 1:length(resKEGG_dot_plots)) {
   tryCatch({
@@ -784,34 +815,80 @@ for (i in 1:length(resKEGG_dot_plots)) {
     print(get(resKEGG_dot_plots[i]))
     dev.off()
   }, error = function(e) {
-   # print(paste("Error printing", resKEGG_dot_plots[i], ":", e))
+    #print(paste("Error printing", resKEGG_dot_plots[i], ":", e))
     file.remove(paste0(resKEGG_dot_plots[i], ".png"))
   })
 }
 ```
 
+```{r, fig.height=20, message=FALSE, fig.width=10, fig.cap= '<div style="text-align:center; color:red; font-size: 14pt;">KEGG pathway analysis</div>'}
+# dir.create("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/Transcriptomics/intermediate_files/Liver/KEGG")
+# setwd("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/Transcriptomics/intermediate_files/Liver/KEGG")
 
-```{r}
+# Get a list of all PNG files in the directory
+png_files <- list.files(pattern = "^resKEGG_dotplot_.*\\.png$")
 
-setwd("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/Transcriptomics/intermediate_files/Liver")
-resKEGG_dot_plots <- ls(pattern="resKEGG_dotplot_*")
+# Read all PNG files into a list of raster objects
+raster_list <- lapply(png_files, readPNG)
 
-# saving PNG
-for (i in 1:length(resKEGG_dot_plots)) {
-  tryCatch({
-    png(paste0(resKEGG_dot_plots[i], ".png"))
-    print(get(resKEGG_dot_plots[i]))
-    dev.off()
-    knitr::include_graphics(paste0(resKEGG_dot_plots[i], ".png"))
-  }, error = function(e) {
-    # print(paste("Error printing", resKEGG_dot_plots[i], ":", e))
-    file.remove(paste0(resKEGG_dot_plots[i], ".png"))
-  })
-}
+# Combine all raster objects into a single plot using gridExtra::grid.arrange()
+plot <- grid.arrange(grobs = lapply(raster_list, rasterGrob), ncol = 3)
+dev.off()
 
 ```
 
+```{r, fig.align='center', fig.width=8, fig.height=12}
+moduleColors <- modules.omics_X_Liver$colors
+mergedMEs <- modules.omics_X_Liver$MEs
+colorOrder = c("grey", standardColors(50));
+moduleLabels = match(moduleColors, colorOrder)-1;
+MEs <- mergedMEs
+MEs <- MEs[ , -which(names(MEs) %in% c("ME0"))]
+modNames <- substring(names(MEs), 3)
 
+# Correlating each genes expression profile with the module eigengenes in order to create module gene sets
+geneModuleMembership <- as.data.frame(cor(omics_data_host, MEs, use = "p"))
 
+# Iteratively creating a list of module genesets to test. These are in ensembl ids
+moduleGeneSets<-lapply(modNames,function(module){
+  column = match(module, modNames)
+  moduleGenes = moduleColors==module
+  rownames(geneModuleMembership[moduleGenes,])
+})
+names(moduleGeneSets)<-modNames
+
+# Trimming the module gene sets so that the final two digits after the "." are removed
+moduleGeneSets.trimmed<-lapply(moduleGeneSets,function(x){
+  str_split_fixed(x,"\\.",2)[,1]
+})
+
+moduleGeneSets.Entrez <- lapply(moduleGeneSets.trimmed, function(x) {
+  x <- match(x, annot1$gene_id)
+  x <- annot1$v2.gene_id.NCBI[x]
+  return(x)
+})
+
+ck<-compareCluster(geneCluster=moduleGeneSets.Entrez,
+                   fun="enrichGO",
+                   OrgDb = "SsalOrg",
+                   pvalueCutoff  = 0.05,
+                   qvalueCutoff  = 0.05, 
+                   ont = "BP",
+                   universe = all.df$V1)
+dotplot(ck)
+cnetplot(ck,node_label="category")
+
+ck1<-compareCluster(geneCluster=moduleGeneSets.Entrez,
+                   fun="enrichKEGG",
+                   organism = "sasa", 
+                   pvalueCutoff  = 0.05,
+                   qvalueCutoff  = 0.05, 
+                   universe = all.df$V1)
+dotplot(ck1)
+cnetplot(ck1,node_label="category")
+
+```
+
+<div class="tocify-extend-page" data-unique="tocify-extend-page" style="height: 0;"></div>
 
 
