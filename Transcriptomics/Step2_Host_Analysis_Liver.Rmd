@@ -32,29 +32,26 @@ knitr::opts_knit$set(root.dir = '/Users/shashankgupta/Desktop/ImprovAFish/github
 ## Step 1. Transcriptomics (Liver)
 ### Load packages
 ```{r}
-library("stringr")
-library("dplyr")
-library("DESeq2")
-library("ggplot2")
-library("tibble")
-library("AnnotationHub")
-library("AnnotationDbi")
-library("readr")
-library("dplyr")
-library("clusterProfiler")
-library("GenomicFeatures")
-library("GO.db")
-library("BiocParallel")
-library("DT")
-library("WGCNA")
-library("cowplot")
-library("gridExtra")
-library("EnhancedVolcano")
-library("plyr")
-library("png")
-library("grid")
-library("gridExtra")
-
+library(GO.db)
+library(GenomicFeatures)
+library(AnnotationDbi)
+library(DESeq2)
+library(dbplyr)
+library(WGCNA)
+library(DT)
+library(clusterProfiler)
+library(dplyr)
+library(AnnotationHub)
+library(ggplot2)
+library(tibble)
+library(readr)
+library(png)
+library(gridExtra)
+library(grid)
+library(stringr)
+library(RColorBrewer)
+library(plyr)
+library(limma)
 ```
 
 Set seed as a precaution for reproducibility as some methods are non-deterministic.
@@ -160,6 +157,7 @@ colnames(omics_data_host_Liver) <- ifelse(is.na(new_colnames), colnames(omics_da
 all(colnames(omics_data_host_Liver) == sample_info$ID_New)
 ```
 
+### DESeq2 analysis
 ```{r}
 df <- round(omics_data_host_Liver) %>%
   # The next steps require a data frame and round() returns a matrix
@@ -419,6 +417,7 @@ DT::datatable(df)
 ```{r}
 omics_data_host <- t(assay(vst(dds_liver)))
 dim(omics_data_host) %>% paste(c("Samples", "Genes"))
+saveRDS(omics_data_host, "/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/OmicsIntegration/omics_data_host_Liver.rds")
 ```
 
 ```{r, results='hide'}
@@ -713,15 +712,14 @@ The code in R connects to the AnnotationHub package and selects OrgDb annotation
 # get OrgDb from AnnotationHub
 ah <- AnnotationHub()
 SsalOrg <- subset(ah, ah$species == "Salmo salar" & ah$rdataclass=="OrgDb")
-SsalOrg <- ah[["AH96017"]]
+SsalOrg <- ah[["AH107424"]]
+
+
 ```
 
 This script performs gene enrichment analysis on multiple modules of genes. The modules of genes are generated from omics data, and the gene annotations are read from a csv file. The probes from the omics data are matched with the gene IDs from the annotations, and the LocusLink IDs are obtained. The unique modules are then selected, and their LocusLink IDs are written into separate text files. Finally, gene ontology (GO) and KEGG pathway analysis are performed for each module using the enrichGO and enrichKEGG functions, respectively. The results are then visualized using the dotplot function.
 
 ```{r, warning=FALSE, message=FALSE}
-# if (!file.exists("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/Transcriptomics/intermediate_files/Liver")) {
-#   dir.create("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/Transcriptomics/intermediate_files/Liver") }
-#setwd("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/Transcriptomics/intermediate_files/Liver")
 moduleLabels <- modules.omics_X_Liver$colors
 moduleColors <- labels2colors(modules.omics_X_Liver$colors)
 table(moduleColors)
@@ -740,7 +738,6 @@ probes2annot <- match(probes, annot1$gene_id)
 allLLIDs <- annot1$v2.gene_id.NCBI[probes2annot]
 
 intModules <- unique(moduleColors)
-
 for (module in intModules) 
 {
   # Select module probes 
@@ -751,30 +748,64 @@ for (module in intModules)
   fileName = paste("LocusLinkIDs-", module, ".txt", sep=""); 
   write.table(as.character(modLLIDs), file = fileName, row.names = FALSE, col.names = FALSE) 
 }
-
 fileName = paste("LocusLinkIDs-all.txt", sep="");
 write.table(as.character(allLLIDs), file = fileName, row.names = FALSE, col.names = FALSE)
+```
 
+
+```{r, warning=FALSE, message=FALSE, eval=FALSE, echo=FALSE}
 #table(moduleColors)
 list_names <- unique(moduleColors)
-all.df <- read.table("LocusLinkIDs-all.txt")
+all.df <- read.table("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/Transcriptomics/intermediate_files/Liver/LocusLinkIDs-all.txt")
+setwd("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/Transcriptomics/intermediate_files/Liver/")
+library(AnnotationDbi)
 all.df$V1 <- as.character(all.df$V1)
 for (i in list_names){
   assign(paste(i,"_df", sep=""), read.table(paste0("LocusLinkIDs-",i,".txt")))
-  assign(paste("resGO_",i, sep=""), enrichGO(gene = get(paste0(i,"_df"))$V1, ont = "BP", universe = all.df$V1, OrgDb = "SsalOrg", pvalueCutoff  = 0.05,qvalueCutoff  = 0.05))
+  assign(paste("resGO_",i, sep=""), enrichGO(gene = get(paste0(i,"_df"))$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05))
   assign(paste("resGO_dotplot_",i, sep=""), dotplot(get(paste0("resGO_",i))))
   assign(paste("resKEGG_",i, sep=""), enrichKEGG(gene = get(paste0(i,"_df"))$V1, universe = all.df$V1,  organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05))
   assign(paste("resKEGG_dotplot_",i, sep=""), dotplot(get(paste0("resKEGG_",i))))
 }
+
 ```
 
+#### GO over-representation analysis
+```{r, warning=FALSE, message=FALSE}
+setwd("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/Transcriptomics/intermediate_files/Liver/")
+all.df <- read.table("LocusLinkIDs-all.txt")
+all.df$V1 <- as.character(all.df$V1)
+# Get unique module colors
+list_names <- unique(moduleColors)
 
+for (i in list_names) {
+  # Read LocusLinkIDs file
+  assign(paste0(i,"_df"), read.table(paste0("LocusLinkIDs-",i,".txt")))
+  # Enrich GO terms
+  assign(paste0("resGO_",i), enrichGO(gene = get(paste0(i,"_df"))$V1, ont = "BP", universe = all.df$V1, OrgDb = SsalOrg, pvalueCutoff  = 0.05,qvalueCutoff  = 0.05))
+  # Plot GO terms using dotplot
+  assign(paste0("resGO_dotplot_",i), dotplot(get(paste0("resGO_",i))))
+}
+```
+
+```{r, warning=FALSE, message=FALSE, eval=FALSE, echo=FALSE}
+
+KEGG pathway over-representation analysis
+
+for (i in list_names) {
+  # Read LocusLinkIDs file
+  assign(paste0(i,"_df"), read.table(paste0("LocusLinkIDs-",i,".txt")))
+  # Enrich KEGG pathways
+  assign(paste0("resKEGG_",i), enrichKEGG(gene = get(paste0(i,"_df"))$V1, universe = all.df$V1,  organism = "sasa", pvalueCutoff = 0.05, qvalueCutoff  = 0.05))
+  # Plot KEGG pathways using dotplot
+  assign(paste0("resKEGG_dotplot_",i), dotplot(get(paste0("resKEGG_",i))))
+}
+
+```
+
+Save all the plots
 ```{r, error=FALSE, warning=FALSE, message=FALSE}
-# save all the plots
-# dir.create("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/Transcriptomics/intermediate_files/Liver/GO")
-# setwd("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/Transcriptomics/intermediate_files/Liver/GO")
 resGO_dot_plots <- ls(pattern="resGO_dotplot_*")
-# saving PNG
 for (i in 1:length(resGO_dot_plots)) {
   tryCatch({
     png(paste0(resGO_dot_plots[i], ".png"))
@@ -790,23 +821,14 @@ for (i in 1:length(resGO_dot_plots)) {
 
 
 ```{r, fig.height=25, message=FALSE, fig.width=12, fig.cap= '<div style="text-align:center; color:red; font-size: 14pt;">Gene Ontology (GO) analysis</div>'}
-# Set the working directory to the directory containing the PNG files
-# setwd("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/Transcriptomics/intermediate_files/Liver/GO")
-
-# Get a list of all PNG files in the directory
 png_files <- list.files(pattern = "^resGO_dotplot_.*\\.png$")
-
-# Read all PNG files into a list of raster objects
 raster_list <- lapply(png_files, readPNG)
-
-# Combine all raster objects into a single plot using gridExtra::grid.arrange()
 plot <- grid.arrange(grobs = lapply(raster_list, rasterGrob), ncol = 3)
 dev.off()
 
 ```
 
-```{r, error=FALSE, warning=FALSE, message=FALSE}
-# setwd("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/Transcriptomics/intermediate_files/Liver")
+```{r, error=FALSE,echo=FALSE, warning=FALSE, message=FALSE, eval=FALSE}
 resKEGG_dot_plots <- ls(pattern="resKEGG_dotplot_*")
 # saving PNG
 for (i in 1:length(resKEGG_dot_plots)) {
@@ -821,23 +843,15 @@ for (i in 1:length(resKEGG_dot_plots)) {
 }
 ```
 
-```{r, fig.height=20, message=FALSE, fig.width=10, fig.cap= '<div style="text-align:center; color:red; font-size: 14pt;">KEGG pathway analysis</div>'}
-# dir.create("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/Transcriptomics/intermediate_files/Liver/KEGG")
-# setwd("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/Transcriptomics/intermediate_files/Liver/KEGG")
-
-# Get a list of all PNG files in the directory
+```{r, eval=FALSE, echo=FALSE, fig.height=20, message=FALSE, fig.width=10, fig.cap= '<div style="text-align:center; color:red; font-size: 14pt;">KEGG pathway analysis</div>'}
 png_files <- list.files(pattern = "^resKEGG_dotplot_.*\\.png$")
-
-# Read all PNG files into a list of raster objects
 raster_list <- lapply(png_files, readPNG)
-
-# Combine all raster objects into a single plot using gridExtra::grid.arrange()
 plot <- grid.arrange(grobs = lapply(raster_list, rasterGrob), ncol = 3)
 dev.off()
 
 ```
 
-```{r, fig.align='center', fig.width=8, fig.height=12}
+```{r, fig.align='center', fig.width=15, fig.height=25}
 moduleColors <- modules.omics_X_Liver$colors
 mergedMEs <- modules.omics_X_Liver$MEs
 colorOrder = c("grey", standardColors(50));
@@ -870,14 +884,20 @@ moduleGeneSets.Entrez <- lapply(moduleGeneSets.trimmed, function(x) {
 
 ck<-compareCluster(geneCluster=moduleGeneSets.Entrez,
                    fun="enrichGO",
-                   OrgDb = "SsalOrg",
+                   OrgDb = SsalOrg,
                    pvalueCutoff  = 0.05,
                    qvalueCutoff  = 0.05, 
                    ont = "BP",
                    universe = all.df$V1)
 dotplot(ck)
-cnetplot(ck,node_label="category")
+cols  <- c(brewer.pal(8,"Set1"), brewer.pal(7,"Dark2"),brewer.pal(7,"Set2"),brewer.pal(12,"Set3"),brewer.pal(7,"Accent"),brewer.pal(12,"Paired"),"gray")
 
+g<- cnetplot(ck,node_label="category")
+g + scale_fill_manual(values =cols)
+```
+
+
+```{r, eval=FALSE, echo=FALSE, fig.align='center', fig.width=14, fig.height=20}
 ck1<-compareCluster(geneCluster=moduleGeneSets.Entrez,
                    fun="enrichKEGG",
                    organism = "sasa", 
@@ -890,5 +910,4 @@ cnetplot(ck1,node_label="category")
 ```
 
 <div class="tocify-extend-page" data-unique="tocify-extend-page" style="height: 0;"></div>
-
 

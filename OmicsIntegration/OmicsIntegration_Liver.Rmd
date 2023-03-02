@@ -1,0 +1,1261 @@
+---
+title: "Feed-microbiome-host interactions in Atlantic salmon over life stages"
+subtitle: "Low dosage of betamannan"
+author: "Shashank Gupta"
+date: "2023-02-03"
+output:
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+---
+
+
+```{r, include=FALSE}
+options(tinytex.verbose = TRUE)
+```
+
+```{r, include=FALSE}
+options(knitr.duplicate.label = 'allow')
+
+```
+
+```{r setup, include=FALSE} 
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, fig.align = "center") 
+```
+
+# Step 1. Omics-Integration: Liver
+## Load packages
+```{r}
+library("stringr")
+library("dplyr")
+library("DESeq2")
+library("ggplot2")
+library("tibble")
+library("readr")
+library("dplyr")
+library("BiocParallel")
+library("DT")
+library("WGCNA")
+library("cowplot")
+library("gridExtra")
+library("phyloseq")
+```
+
+```{r}
+take_average = T
+cluster_the_columns = F
+col_cut <- 1
+row_cut <- 1
+prefix_genes <- "h"
+prefix_OTUs <- "m"
+filter.sig.mod <- 2
+```
+
+### Import omics data
+```{r}
+wgcna_metatranscriptomics <- readRDS("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/OmicsIntegration/stage2results_MetaTranscriptomics.rds")
+wgcna_transcriptomics_Liver <- readRDS("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/OmicsIntegration/stage2results_Transcriptomics_Liver.rds")
+wgcna_metagenomics <- readRDS("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/OmicsIntegration/stage2results_Metagenomics.rds")
+wgcna_metabolomics_HILIC <- readRDS("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/OmicsIntegration/stage2results_HILIC.rds")
+wgcna_metabolomics_RP <- readRDS("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/OmicsIntegration/stage2results_RP.rds")
+wgcna_metabolomics_Lipidomics <- readRDS("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/OmicsIntegration/stage2results_Lipidomics.rds")
+wgcna_metaprotomics <- readRDS("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/OmicsIntegration/stage2results_Proteomics.rds")
+psdata <- readRDS("/Users/shashankgupta/Desktop/ImprovAFish/github/Input/psdata.rds")
+```
+
+Function to remove and average modules
+```{r}
+remove_and_average_MEs <- function(input_data, take_average) {
+  idx <- which(colnames(input_data$modules$MEs) == "ME0")
+  input_data$modules$MEs <- input_data$modules$MEs[,-idx]
+  
+  if(take_average){
+    input_data$modules$MEs %>% 
+      rownames_to_column(var = "common") %>%
+      mutate(common = sub("_[0-9]{1,2}$", "", common)) %>% 
+      group_by(common) %>% 
+      summarise_all(list(mean)) %>% 
+      ungroup() -> input_data_eigengenes
+    
+    input_data_eigengenes <- as.data.frame(input_data_eigengenes)
+    
+  } else{
+    input_data_eigengenes <- input_data$modules$MEs
+  }
+  rownames(input_data_eigengenes) <- input_data_eigengenes$common
+  input_data_eigengenes$common <- NULL
+  return(input_data_eigengenes)
+}
+
+```
+
+# Step 2. Transcriptomics (Liver)
+```{r}
+wgcna_transcriptomics_Liver_eigengenes <- remove_and_average_MEs(input_data = wgcna_transcriptomics_Liver, take_average = T)
+```
+
+
+```{r}
+# Create a dendrogram of the transcriptomics eigengenes to organise the final plots.
+X_ME_dendro <- hclust(as.dist(1 - WGCNA::bicor(wgcna_transcriptomics_Liver_eigengenes, maxPOutliers = 0.05)), method = "ward.D2")
+
+# "..palettes that vary from one hue to another via white may have a more symmetrical appearance in RGB space"
+if(take_average){
+  heatmap_colors <- colorRampPalette(c("#18b29f","#FFFFFF","#ac6721"), interpolate = "spline", space = "rgb")(51)
+} else{
+  heatmap_colors <- colorRampPalette(c("#18b29f","#FFFFFF","#ac6721"), interpolate = "spline", space = "rgb")(51)
+}
+
+annotation_col <- 
+  rownames(wgcna_transcriptomics_Liver_eigengenes) %>% 
+  as.data.frame() %>% 
+  dplyr::rename(common = ".") %>% 
+  tidyr::separate(col = common,  into = c("Time", "New_Diet"), remove = F, extra = "drop") %>% # If replicates are present, we drop them here
+  dplyr::select(common,"Time", "New_Diet") %>%  
+  tibble::column_to_rownames(var = "common")
+colnames(annotation_col) <- c("Time" , "New_Diet")
+annotation_colors <- list(
+  Time = c(`T1` = "navy", `T2` = "darkgreen", `T3` = "red"),
+  New_Diet = c(`CTR` = "#1D88AF", `MC1` = "darkblue", `MC2` = "darkgreen", `MN3` = "#F08A46"))
+
+
+wgcna_transcriptomics_Liver_eigengenes_to_plot <- 
+  dplyr::inner_join(annotation_col %>% 
+                      rownames_to_column(var = "common"), 
+                    wgcna_transcriptomics_Liver_eigengenes %>% 
+                      rownames_to_column(var = "common"), 
+                    by = "common") %>%
+  #dplyr::arrange(Feed, Water, Day) %>%              # The order at which the columns should appear, given that there is no clustering.
+  dplyr::select(common, starts_with("ME")) %>% 
+  tibble::column_to_rownames(var = "common") %>% 
+  t()
+
+moduleLabels = wgcna_transcriptomics_Liver$modules$colors
+moduleColors = labels2colors(wgcna_transcriptomics_Liver$modules$colors)
+table(moduleLabels)
+table(moduleColors)
+```
+
+### Transcriptomics heatmap
+```{r, fig.align='center', fig.height=8}
+#heatmap_colors <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 6, name ="RdBu")))(51)
+heatmap_colors <- colorRampPalette(c("#18b29f","#FFFFFF","#ac6721"), interpolate = "spline", space = "rgb")(51)
+pheatmap::pheatmap(wgcna_transcriptomics_Liver_eigengenes_to_plot, 
+                   cluster_cols = F,
+                   cluster_rows = X_ME_dendro,
+                   treeheight_row = 20,
+                   #cluster_rows = T,
+                   cutree_rows = row_cut,
+                   cutree_cols = col_cut,
+                   color = heatmap_colors,
+                   fontsize = 10,
+                   fontsize_col = ifelse(take_average, 10, 6),
+                   fontsize_row = 8,
+                   annotation_colors = annotation_colors,
+                   annotation_col = annotation_col, 
+                   show_colnames = F,
+                   silent = F,annotation_legend = F,
+                   labels_row = paste0(prefix_genes, rownames(wgcna_transcriptomics_Liver_eigengenes_to_plot)),
+                   main = paste("Gene Module 'expression'\n", ifelse(take_average, "mean values", ""))) -> X_plot
+```
+
+# Step 3. Metagenomics
+```{r}
+wgcna_metagenomics_eigengenes <- remove_and_average_MEs(input_data = wgcna_metagenomics, take_average = T)
+
+dim(wgcna_metagenomics_eigengenes); dim(wgcna_transcriptomics_Liver_eigengenes)
+```
+
+Correlate modules from transcriptomics and metagenomics
+```{r, warning=FALSE, message=FALSE, error=FALSE}
+# Check that the samples are in the same order. 
+# If they are not in order, change their order to match; If they do not match one-to-one, call an error.
+same_order <- all(rownames(wgcna_metagenomics_eigengenes) == rownames(wgcna_transcriptomics_Liver_eigengenes))
+if(!same_order){
+  wgcna_metagenomics_eigengenes <- wgcna_metagenomics_eigengenes[order(rownames(wgcna_metagenomics_eigengenes)),]
+  wgcna_transcriptomics_Liver_eigengenes <- wgcna_transcriptomics_Liver_eigengenes[order(rownames(wgcna_transcriptomics_Liver_eigengenes)),]
+  same_order <- all(rownames(wgcna_metagenomics_eigengenes) == rownames(wgcna_transcriptomics_Liver_eigengenes))
+  if(!same_order){
+    stop("Sample names do not match. Samples should be identical.", call. = F)
+  }
+} else{cat("Samples match")}
+ 
+
+p.value_matr <- corr.value_matr <- matrix(ncol = ncol(wgcna_metagenomics_eigengenes), 
+                                          nrow = ncol(wgcna_transcriptomics_Liver_eigengenes), 
+                                          dimnames = list(colnames(wgcna_transcriptomics_Liver_eigengenes), 
+                                                          colnames(wgcna_metagenomics_eigengenes)))
+
+
+for(i in 1:ncol(wgcna_transcriptomics_Liver_eigengenes)){
+  for(j in 1:ncol(wgcna_metagenomics_eigengenes)){
+    cor.res <- cor.test(wgcna_transcriptomics_Liver_eigengenes[,i], wgcna_metagenomics_eigengenes[,j])
+    p.value_matr[i, j] <- cor.res$p.value
+    corr.value_matr[i, j] <- cor.res$estimate
+  }
+}
+
+# Correct for number of tests
+p.value_matr.adjust <- p.adjust(p.value_matr, method = "fdr")
+dim(p.value_matr.adjust) <- dim(p.value_matr)
+dimnames(p.value_matr.adjust) <- list(colnames(wgcna_transcriptomics_Liver_eigengenes), colnames(wgcna_metagenomics_eigengenes))
+
+# Add significance level.  
+# One star means a p-value of less than 0.05; Two stars is less than 0.01, and three, is less than 0.001.
+
+signif_matrix <- rep("", length(p.value_matr))
+three_star <- which( p.value_matr <= 0.001)
+signif_matrix[three_star] <- "***"
+two_star <- which((p.value_matr <= 0.01) & (p.value_matr > 0.001))
+signif_matrix[two_star] <- "**"
+one_star <- which((p.value_matr <= 0.05) & (p.value_matr > 0.01))
+signif_matrix[one_star] <- "*"
+dim(signif_matrix) = dim(p.value_matr) # Give textMatrix the correct dimensions 
+
+
+# Collect all results into a list.
+Y_corr_X <- list(p_value = p.value_matr, 
+                 p_value_adj = p.value_matr.adjust,
+                 signif_matrix = signif_matrix,
+                 correlation = corr.value_matr)
+rm(p.value_matr, p.value_matr.adjust, signif_matrix, corr.value_matr)
+```
+
+### Metagenomics heatmap
+```{r, warning=FALSE, message=FALSE, error=FALSE,fig.height=6}
+heatmap_colors <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 6, name ="RdBu")))(51)
+wgcna_metagenomics$hubs %>% 
+  as.data.frame() %>% 
+  dplyr::rename("OTU_name" = ".") %>%
+  tibble::rownames_to_column(var = "Module") -> hubOTUs
+
+otu_taxonomy <- data.frame(tax_table(psdata))
+dplyr::left_join(hubOTUs, 
+                 (otu_taxonomy %>%
+                    tibble::rownames_to_column(var = "OTU_name")), 
+                 by = "OTU_name") -> hubOTUs_Before
+
+hubOTUs_Before$ModuleOTU <- paste0("ME" ,hubOTUs_Before$Module)
+
+
+test <- Y_corr_X$correlation
+hubOTUs_Before <- hubOTUs_Before[, c(10, 8)]
+#hubOTUs_Before$Genus <- replace(hubOTUs_Before$Genus, hubOTUs_Before$Genus=="Allorhizobium_Neorhizobium_Pararhizobium_Rhizobium", "Rhizobium")
+hubOTUs_Before$Genus <- replace(hubOTUs_Before$Genus, hubOTUs_Before$Genus=="Burkholderia_Caballeronia_Paraburkholderia", "BCP")
+hubOTUs_Before$Genus <- replace(hubOTUs_Before$Genus, hubOTUs_Before$Genus=="BBMC_4", "Family_Fibrobacterales")
+hubOTUs_Before$Genus <- replace(hubOTUs_Before$Genus, hubOTUs_Before$Genus=="Prochlorococcus_MIT9313", "Prochlorococcus")
+
+#match(hubOTUs_Before[, "ModuleOTU"], colnames(test))
+colnames(test)[match(hubOTUs_Before[,"ModuleOTU"], colnames(test))] = hubOTUs_Before[,"Genus"]
+Y_corr_X$correlation <- test
+pheatmap::pheatmap(Y_corr_X$correlation, 
+                   color = heatmap_colors, 
+                   treeheight_col = 0, 
+                   treeheight_row = 0,  # will be shown on the transcriptomics ME heatmap
+                   cluster_rows = X_ME_dendro,
+                   cutree_rows = row_cut,
+                   display_numbers = Y_corr_X$signif_matrix, 
+                   fontsize_number = 8, #10
+                   breaks = seq(from = -1, to = 1, length.out = 51), 
+                   silent = F,
+                   show_rownames = F, legend = F,
+                   labels_row = paste0(prefix_OTUs, rownames(Y_corr_X$correlation)),
+                   labels_col = paste0(colnames(Y_corr_X$correlation)),
+                   main =  paste("Eigen\n", "ASVs" )) -> Y_corr_X_plot
+```
+
+# Step 4. Traits formatting
+```{r, warning=FALSE, message=FALSE, error=FALSE}
+#Z_traits_backup <- Z_traits
+#Correlate transcriptomics with traits
+sample_info <- read.csv("/Users/shashankgupta/Desktop/ImprovAFish/ImprovAFish/sample_info.csv", row.names = 1)
+sample_info <- as_tibble(sample_info)
+Z_traits <- sample_info %>% dplyr::select(ID_New, Time, New_Diet)
+Z_traits <- Z_traits %>%
+  mutate(Time = factor(Time, levels = c("T1", "T2", "T3")),
+         New_Diet = factor(New_Diet),
+         Day = ifelse(Time == "T1", paste0("T1_", New_Diet),
+                      ifelse(Time == "T2", paste0("T2_", New_Diet), paste0("T3_", New_Diet))))
+Z_traits$Time <- factor(Z_traits$Time, levels = c("T1", "T2", "T3"))
+Z_traits$Day <- factor(Z_traits$Day)
+
+# One-hot encoding the nominal variables
+nominal_variables <- Z_traits %>%
+  dplyr::select(one_of("Day", "New_Diet", "Time" )) %>% 
+  model.matrix(~.-1, data = .) %>% 
+  as_tibble()
+
+ordinal_and_other_variables <- Z_traits %>% 
+  dplyr::select(one_of("Day", "New_Diet", "Time" , "ID_New"))
+Z_traits <- nominal_variables
+row.names(Z_traits) <- ordinal_and_other_variables$ID_New
+Z_traits$ID_New <- row.names(Z_traits) 
+Z_traits$TimeT1 <- ifelse(grepl("T1", Z_traits$ID_New), 1, 0)
+Z_traits$New_Dietctr <- ifelse(grepl("ctr", Z_traits$ID_New), 1, 0)
+row.names(Z_traits)  <- Z_traits$ID_New
+take_average <- TRUE
+if (take_average) {
+  Z_traits <- Z_traits %>% 
+    mutate(ID_New = sub("_[0-9]{1,2}$", "", ID_New)) %>% 
+    group_by(ID_New) %>% 
+    summarise_all(list(mean), na.rm = TRUE) %>%  # Remove NA values
+    ungroup() %>% 
+    tibble::column_to_rownames(var = "ID_New")
+  Z_traits <- as.data.frame(Z_traits)
+}
+
+Z_traits <- Z_traits[,grepl(c("New_Diet|Time"), colnames(Z_traits))]
+
+Z_traits <- Z_traits[, c(1,2,3,6,4,5)]
+colnames(Z_traits)[1:6] <- c("Diet_MC1", "Diet_MC2", "Diet_MN3", "Time_T1",  "Time_T2", "Time_T3")
+```
+
+
+```{r, warning=FALSE, message=FALSE, error=FALSE}
+# Check that the samples are in the same order. 
+# If they are not in order, change their order to match; If they do not match one-to-one, call an error.
+same_order <- all(rownames(Z_traits) == rownames(wgcna_transcriptomics_Liver_eigengenes))
+if(!same_order){
+  wgcna_metagenomics_eigengenes <- wgcna_metagenomics_eigengenes[order(rownames(wgcna_metagenomics_eigengenes)),]
+  wgcna_transcriptomics_Liver_eigengenes <- wgcna_transcriptomics_Liver_eigengenes[order(rownames(wgcna_transcriptomics_Liver_eigengenes)),]
+  same_order <- all(rownames(wgcna_metagenomics_eigengenes) == rownames(wgcna_transcriptomics_Liver_eigengenes))
+  if(!same_order){
+    stop("Sample names do not match. Samples should be identical.", call. = F)
+  }
+} else{cat("Samples match")}
+
+p.value_matr <- corr.value_matr <- matrix(ncol = ncol(Z_traits), 
+                                          nrow = ncol(wgcna_transcriptomics_Liver_eigengenes), 
+                                          dimnames = list(colnames(wgcna_transcriptomics_Liver_eigengenes), 
+                                                          colnames(Z_traits)))
+for(i in 1:ncol(wgcna_transcriptomics_Liver_eigengenes)){
+  for(j in 1:ncol(Z_traits)){
+    
+    if(colnames(Z_traits)[j] == "Diet_MC1"){
+      cor.res <- cor.test(wgcna_transcriptomics_Liver_eigengenes[,i], Z_traits[,j], method = "spearman", exact = FALSE)
+      p.value_matr[i, j] <- cor.res$p.value
+      corr.value_matr[i, j] <- cor.res$estimate
+    } else{
+      cor.res <- cor.test(wgcna_transcriptomics_Liver_eigengenes[,i], Z_traits[,j])
+      p.value_matr[i, j] <- cor.res$p.value
+      corr.value_matr[i, j] <- cor.res$estimate
+    }
+  }
+}
+```
+
+### Traits heatmap
+```{r, warning=FALSE, message=FALSE, error=FALSE, fig.height=8}
+# Correct for number of tests
+p.value_matr.adjust <- p.adjust(p.value_matr, method = "fdr")
+dim(p.value_matr.adjust) <- dim(p.value_matr)
+dimnames(p.value_matr.adjust) <- list(colnames(wgcna_transcriptomics_Liver_eigengenes), colnames(Z_traits))
+
+
+# Add significance level.  
+# One star means a p-value of less than 0.05; Two stars is less than 0.01, and three, is less than 0.001.
+signif_matrix <- rep("", length(p.value_matr))
+three_star <- which( p.value_matr <= 0.001)
+signif_matrix[three_star] <- "***"
+two_star <- which((p.value_matr <= 0.01) & (p.value_matr > 0.001))
+signif_matrix[two_star] <- "**"
+one_star <- which((p.value_matr <= 0.05) & (p.value_matr > 0.01))
+signif_matrix[one_star] <- "*"
+dim(signif_matrix) = dim(p.value_matr) # Give textMatrix the correct dimensions 
+
+
+# Collect all results into a list.
+Z_corr_X <- list(p_value = p.value_matr, 
+                 p_value_adj = p.value_matr.adjust,
+                 signif_matrix = signif_matrix,
+                 correlation = corr.value_matr)
+rm(p.value_matr, p.value_matr.adjust, signif_matrix, corr.value_matr)
+
+
+heatmap_colors <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 6, name ="RdBu")))(51)
+
+pheatmap::pheatmap(Z_corr_X$correlation, 
+                   color = heatmap_colors,
+                   cluster_cols = F,
+                   treeheight_col = 0, 
+                   treeheight_row = 0, # will be shown on the transcriptomics ME heatmap
+                   cluster_rows = X_ME_dendro,
+                   cutree_rows = row_cut,
+                   display_numbers = Z_corr_X$signif_matrix, 
+                   fontsize_number = 8, # 10
+                   breaks = seq(from = -1, to = 1, length.out = 51), 
+                   silent = F, 
+                   legend = F,
+                   show_rownames = F) -> Z_corr_X_plot
+```
+
+
+```{r, eval=FALSE, echo=FALSE, warning=FALSE, message=FALSE, error=FALSE, fig.height=10, fig.width=12}
+#Integrated heatmap
+#Between metagenomics, transcriptomics and traits
+# Modules with no significant associations
+if (filter.sig.mod == 1) {
+  idx1 <- rowSums(#Z_corr_X$signif_matrix == "*" |
+    Z_corr_X$signif_matrix == "**" |
+      Z_corr_X$signif_matrix == "***") > 0
+  idx2 <- rowSums(#Y_corr_X$signif_matrix == "*" |
+    Y_corr_X$signif_matrix == "**" | 
+      Y_corr_X$signif_matrix == "***") > 0
+  sig.modules.h <- rownames(Y_corr_X$p_value)[idx1 & idx2]
+  
+  sig.modules.m <- colnames(Y_corr_X$p_value)[colSums(#Y_corr_X$signif_matrix[idx1 & idx2,] == "*" |
+    Y_corr_X$signif_matrix[idx1 & idx2,] == "**" | 
+      Y_corr_X$signif_matrix[idx1 & idx2,] == "***") > 0]
+  
+  
+  save(sig.modules.h, sig.modules.m, file = "../data/module_data/sig_modules.Rdata")
+}
+
+cowplot::plot_grid(Z_corr_X_plot$gtable,
+                   X_plot$gtable,
+                   Y_corr_X_plot$gtable, 
+                   ncol = 3, 
+                   rel_widths = c(dim(Z_traits)[2]/3, 
+                                  ifelse(take_average,dim(wgcna_transcriptomics_Liver_eigengenes)[1]/2,dim(wgcna_transcriptomics_Liver_eigengenes)[1]/6),
+                                  dim(wgcna_metagenomics_eigengenes)[2]/2.2),
+                   align = "h") + ggplot2::theme(plot.margin = ggplot2::unit(c(3,0,2.5,1), "cm")) # Top, Right, Bottom, Left
+```
+
+# Step 5.  Module–trait associations
+```{r, warning=FALSE, message=FALSE, error=FALSE}
+# Define numbers of genes and samples
+omics_data_host <- readRDS("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/OmicsIntegration/omics_data_host_Liver.rds")
+nGenes = ncol(omics_data_host);
+nSamples = nrow(omics_data_host);
+moduleLabels1 = wgcna_transcriptomics_Liver$modules$colors
+moduleColors1 = labels2colors(wgcna_transcriptomics_Liver$modules$colors)
+MEs = wgcna_transcriptomics_Liver$modules$MEs
+table(moduleColors1)
+table(moduleLabels1)
+# Recalculate MEs with color labels
+MEs0 = moduleEigengenes(omics_data_host, moduleLabels1)$eigengenes
+#MEs = orderMEs(MEs0)
+DT::datatable(MEs0)
+MEs <- MEs0[, c(2:77)]
+#colnames(MEs)<- paste("h", colnames(MEs), sep = "")
+#host_gut_mapping_file <- read.table("../host_data/host_gut_mapping.txt", sep = "\t", row.names = 1, header = T)
+
+sample_info1 <- read.csv("/Users/shashankgupta/Desktop/ImprovAFish/ImprovAFish/sample_info.csv", row.names = 1)
+sample_info1[1:7] <- NULL
+sample_info1$ID_New <- NULL
+sample_info1$common <- NULL
+
+# Find the samples that are present in both MEs and sample_info1
+common_samples <- intersect(row.names(MEs), row.names(sample_info1))
+
+# Subset MEs to keep only the common samples and reorder it
+MEs <- MEs[common_samples, ]
+reorder_idx <- match(row.names(MEs), row.names(sample_info1))
+sample_info1 <- sample_info1[reorder_idx , ]
+all(row.names(sample_info1) == row.names(MEs))
+
+
+moduleTraitCor = cor(MEs, sample_info1, use = "p")
+X_ME_dendro_row <- rownames(wgcna_transcriptomics_Liver_eigengenes_to_plot)[X_plot$tree_row$order]
+moduleTraitCor <- moduleTraitCor[order(match(rownames(moduleTraitCor), X_ME_dendro_row)), ]
+moduleTraitPvalue = corPvalueStudent(moduleTraitCor, nSamples)
+
+# Will display correlations and their p-values
+textMatrix =  paste(signif(moduleTraitCor, 2), "\n(",
+                    signif(moduleTraitPvalue, 1), ")", sep = "");
+dim(textMatrix) = dim(moduleTraitCor)
+```
+
+### Trait heatmap
+```{r, warning=FALSE, message=FALSE, error=FALSE, eval=FALSE}
+# Display the correlation values within a heatmap plot
+labeledHeatmap(Matrix = moduleTraitCor,
+               xLabels = names(sample_info1),
+               yLabels = rownames(moduleTraitCor),
+               ySymbols =rownames(moduleTraitCor),
+               colorLabels = FALSE,
+               colors = blueWhiteRed(50),
+               textMatrix = textMatrix,
+               setStdMargins = FALSE,
+               cex.text = 0.5,
+               zlim = c(-1,1),
+               main = paste("Module-trait relationships"))
+```
+
+```{r, warning=FALSE, message=FALSE, error=FALSE, fig.align='center'}
+signif_matrix <- rep("", length(moduleTraitPvalue))
+three_star <- which( moduleTraitPvalue <= 0.001)
+signif_matrix[three_star] <- "***"
+two_star <- which((moduleTraitPvalue <= 0.01) & (moduleTraitPvalue > 0.001))
+signif_matrix[two_star] <- "**"
+one_star <- which((moduleTraitPvalue <= 0.05) & (moduleTraitPvalue > 0.01))
+signif_matrix[one_star] <- "*"
+dim(signif_matrix) = dim(moduleTraitPvalue) # Give textMatrix the correct dimensions 
+
+
+pheatmap::pheatmap(moduleTraitCor, 
+                   color = heatmap_colors,
+                   yLabels = names(MEs),
+                   ySymbols = names(MEs),
+                   cluster_cols = F,
+                   #treeheight_col = 0, 
+                   #treeheight_row = 0, # will be shown on the transcriptomics ME heatmap
+                   cluster_rows = F,
+                   #cutree_rows = row_cut,
+                   display_numbers = signif_matrix, 
+                   fontsize_number = 8, # 10
+                   breaks = seq(from = -1, to = 1, length.out = 51), 
+                   silent = F, 
+                   legend = F,
+                   show_rownames = F,
+                   main = "Traits and external variables") -> MT_plot
+```
+
+
+
+# Step 6.  MetaTranscriptomics
+```{r, warning=FALSE, message=FALSE, error=FALSE}
+idx <- which(colnames(wgcna_metatranscriptomics$modules$MEs) == "ME0")
+wgcna_metatranscriptomics$modules$MEs <- wgcna_metatranscriptomics$modules$MEs[,-idx]
+
+take_average <- TRUE
+if(take_average){
+  wgcna_metatranscriptomics$modules$MEs %>% 
+    rownames_to_column(var = "common") %>% 
+    mutate(common = sub("_HGm[0-9]{1,2}$", "", common)) %>% 
+    group_by(common) %>% 
+    summarise_all(list(mean)) %>% 
+    ungroup() -> wgcna_metatranscriptomics_eigengenes
+  
+  wgcna_metatranscriptomics_eigengenes <- as.data.frame(wgcna_metatranscriptomics_eigengenes)
+} 
+wgcna_metatranscriptomics_eigengenes$common <- gsub("mc1", "MC1", wgcna_metatranscriptomics_eigengenes$common)
+wgcna_metatranscriptomics_eigengenes$common <- gsub("mc2", "MC2", wgcna_metatranscriptomics_eigengenes$common)
+wgcna_metatranscriptomics_eigengenes$common <- gsub("mn3", "MN3", wgcna_metatranscriptomics_eigengenes$common)
+wgcna_metatranscriptomics_eigengenes$common <- gsub("ctr", "CTR", wgcna_metatranscriptomics_eigengenes$common)
+
+rownames(wgcna_metatranscriptomics_eigengenes) <- wgcna_metatranscriptomics_eigengenes$common
+wgcna_metatranscriptomics_eigengenes$common <- NULL
+
+dim(wgcna_metatranscriptomics_eigengenes); dim(wgcna_transcriptomics_Liver_eigengenes)
+```
+
+
+```{r, warning=FALSE, message=FALSE, error=FALSE, fig.align='center'}
+table(rownames(wgcna_transcriptomics_Liver_eigengenes) %in% rownames(wgcna_metatranscriptomics_eigengenes))
+wgcna_transcriptomics_Liver_eigengenes_New <- wgcna_transcriptomics_Liver_eigengenes[rownames(wgcna_transcriptomics_Liver_eigengenes) %in% rownames(wgcna_metatranscriptomics_eigengenes), ]
+table(rownames(wgcna_transcriptomics_Liver_eigengenes_New) %in% rownames(wgcna_metatranscriptomics_eigengenes))
+
+#Correlate modules from transcriptomics and metagenomics.
+# Check that the samples are in the same order. 
+# If they are not in order, change their order to match; If they do not match one-to-one, call an error.
+same_order <- all(rownames(wgcna_metatranscriptomics_eigengenes) == rownames(wgcna_transcriptomics_Liver_eigengenes_New))
+if(!same_order){
+  wgcna_metatranscriptomics_eigengenes <- wgcna_metatranscriptomics_eigengenes[order(rownames(wgcna_metatranscriptomics_eigengenes)),]
+  wgcna_transcriptomics_Liver_eigengenes_New <- wgcna_transcriptomics_Liver_eigengenes_New[order(rownames(wgcna_transcriptomics_Liver_eigengenes_New)),]
+  same_order <- all(rownames(wgcna_metatranscriptomics_eigengenes) == rownames(wgcna_transcriptomics_Liver_eigengenes_New))
+  if(!same_order){
+    stop("Sample names do not match. Samples should be identical.", call. = F)
+  }
+} else{cat("Samples match")}
+
+
+#####
+p.value_matr <- corr.value_matr <- matrix(ncol = ncol(wgcna_metatranscriptomics_eigengenes), 
+                                          nrow = ncol(wgcna_transcriptomics_Liver_eigengenes_New), 
+                                          dimnames = list(colnames(wgcna_transcriptomics_Liver_eigengenes_New), 
+                                                          colnames(wgcna_metatranscriptomics_eigengenes)))
+
+
+for(i in 1:ncol(wgcna_transcriptomics_Liver_eigengenes_New)){
+  for(j in 1:ncol(wgcna_metatranscriptomics_eigengenes)){
+    cor.res <- cor.test(wgcna_transcriptomics_Liver_eigengenes_New[,i], wgcna_metatranscriptomics_eigengenes[,j])
+    p.value_matr[i, j] <- cor.res$p.value
+    corr.value_matr[i, j] <- cor.res$estimate
+  }
+}
+
+# Correct for number of tests
+p.value_matr.adjust <- p.adjust(p.value_matr, method = "fdr")
+dim(p.value_matr.adjust) <- dim(p.value_matr)
+dimnames(p.value_matr.adjust) <- list(colnames(wgcna_transcriptomics_Liver_eigengenes_New), colnames(wgcna_metatranscriptomics_eigengenes))
+
+
+# Add significance level.  
+# One star means a p-value of less than 0.05; Two stars is less than 0.01, and three, is less than 0.001.
+
+signif_matrix <- rep("", length(p.value_matr))
+three_star <- which( p.value_matr <= 0.001)
+signif_matrix[three_star] <- "***"
+two_star <- which((p.value_matr <= 0.01) & (p.value_matr > 0.001))
+signif_matrix[two_star] <- "**"
+one_star <- which((p.value_matr <= 0.05) & (p.value_matr > 0.01))
+signif_matrix[one_star] <- "*"
+dim(signif_matrix) = dim(p.value_matr) # Give textMatrix the correct dimensions 
+
+
+# Collect all results into a list.
+MetaTrans_corr_X <- list(p_value = p.value_matr, 
+                         p_value_adj = p.value_matr.adjust,
+                         signif_matrix = signif_matrix,
+                         correlation = corr.value_matr)
+#rm(p.value_matr, p.value_matr.adjust, signif_matrix, corr.value_matr)
+
+heatmap_colors <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 6, name ="RdBu")))(51)
+
+#Annotation for Eigen Metatranscriptomics
+meta_info <- read_tsv("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/MetaTranscriptomics/Total.DRAM.STx.bac.k2.total.annotations.tsv")
+kraken_info <- read_tsv("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/MetaTranscriptomics/Kraken2_result.tsv")
+rownames(meta_info) <- meta_info$...1
+wgcna_metatranscriptomics$hubs %>% 
+  as.data.frame() %>% 
+  dplyr::rename("metatranscriptomics_name" = ".") %>%
+  tibble::rownames_to_column(var = "Module") -> hubmetatranscriptomics
+
+hubmetatranscriptomics$new <- sub("^[^_]*_|_[^_]*$", "",  hubmetatranscriptomics$metatranscriptomics_name)
+hubmetatranscriptomics$new <- sub("_[^_]*$", "",  hubmetatranscriptomics$new)
+
+hubmetatranscriptomics_Before <- merge(hubmetatranscriptomics, kraken_info, by.y= "metatranscriptomics_name", by.x="new",  all.x =T)
+
+hubmetatranscriptomics_Before$Modulemetatranscriptomic <- paste0("ME" ,hubmetatranscriptomics_Before$Module)
+hubmetatranscriptomics_Before$new <- NULL 
+hubmetatranscriptomics_Before$Module <- NULL 
+hubmetatranscriptomics_Before$kraken2 <- sub("\\(.*", "", hubmetatranscriptomics_Before$kraken2_taxonomy)
+
+#Match with Eigen Metatranscriptomics
+test <- MetaTrans_corr_X$correlation
+#match(hubmetatranscriptomics_Before[, "Modulemetatranscriptomic"], colnames(test))
+colnames(test)[match(hubmetatranscriptomics_Before[,"Modulemetatranscriptomic"], colnames(test))] = hubmetatranscriptomics_Before[,"kraken2"]
+
+MetaTrans_corr_X$correlation <- test
+```
+
+### MetaTranscriptomics heatmap
+```{r, warning=FALSE, message=FALSE, error=FALSE, fig.align='center',fig.height=8}
+pheatmap::pheatmap(MetaTrans_corr_X$correlation, 
+                   color = heatmap_colors, 
+                   treeheight_col = 0, 
+                   treeheight_row = 0,  # will be shown on the transcriptomics ME heatmap
+                   cluster_rows = X_ME_dendro,
+                   cutree_rows = row_cut,
+                   display_numbers = MetaTrans_corr_X$signif_matrix, 
+                   fontsize_number = 8, #10
+                   breaks = seq(from = -1, to = 1, length.out = 51), 
+                   silent = F,
+                   show_rownames = F, legend = F,
+                   labels_row = paste0(prefix_OTUs, rownames(MetaTrans_corr_X$correlation)),
+                   labels_col = paste0(colnames(MetaTrans_corr_X$correlation)),
+                   main = paste("Eigen\n", "Metatranscriptomics" )) -> MetaTrans_corr_X_plot
+
+```
+
+# Step 7. MetaProteomics
+```{r, warning=FALSE, message=FALSE, error=FALSE}
+#rownames(stage2results_Proteomics$modules$MEs) <- gsub("-MC1-TK1-", "_MC1_tk1_", rownames(stage2results_Proteomics$modules$MEs))
+# Remove ME0 from analysis
+
+idx <- which(colnames(wgcna_metaprotomics$modules$MEs) == "ME0")
+wgcna_metaprotomics$modules$MEs <- wgcna_metaprotomics$modules$MEs[,-idx]
+
+take_average<- TRUE
+if(take_average){
+  wgcna_metaprotomics$modules$MEs %>% 
+    rownames_to_column(var = "common") %>% 
+    mutate(common = sub("_HGm.*", "", common)) %>% 
+    group_by(common) %>% 
+    summarise_all(list(mean)) %>% 
+    ungroup() -> wgcna_metaprotomics_eigengenes
+  
+  wgcna_metaprotomics_eigengenes <- as.data.frame(wgcna_metaprotomics_eigengenes)
+}
+wgcna_metaprotomics_eigengenes$common <- gsub("mc1", "MC1", wgcna_metaprotomics_eigengenes$common)
+wgcna_metaprotomics_eigengenes$common <- gsub("mc2", "MC2", wgcna_metaprotomics_eigengenes$common)
+wgcna_metaprotomics_eigengenes$common <- gsub("mn3", "MN3", wgcna_metaprotomics_eigengenes$common)
+wgcna_metaprotomics_eigengenes$common <- gsub("ctr", "CTR", wgcna_metaprotomics_eigengenes$common)
+
+rownames(wgcna_metaprotomics_eigengenes) <- wgcna_metaprotomics_eigengenes$common
+wgcna_metaprotomics_eigengenes$common <- NULL
+
+dim(wgcna_metaprotomics_eigengenes); dim(wgcna_transcriptomics_Liver_eigengenes)
+```
+
+
+```{r, warning=FALSE, message=FALSE, error=FALSE}
+table(rownames(wgcna_transcriptomics_Liver_eigengenes) %in% rownames(wgcna_metaprotomics_eigengenes))
+
+wgcna_transcriptomics_Liver_eigengenes_New <- wgcna_transcriptomics_Liver_eigengenes[rownames(wgcna_transcriptomics_Liver_eigengenes) %in% rownames(wgcna_metaprotomics_eigengenes), ]
+
+
+table( rownames(wgcna_transcriptomics_Liver_eigengenes_New) %in% rownames(wgcna_metaprotomics_eigengenes))
+table( rownames(wgcna_transcriptomics_Liver_eigengenes_New) == rownames(wgcna_metaprotomics_eigengenes))
+
+#Correlate modules from transcriptomics and metagenomics.
+# Check that the samples are in the same order. 
+# If they are not in order, change their order to match; If they do not match one-to-one, call an error.
+same_order <- all(rownames(wgcna_metaprotomics_eigengenes) == rownames(wgcna_transcriptomics_Liver_eigengenes_New))
+if(!same_order){
+  wgcna_metaprotomics_eigengenes <- wgcna_metaprotomics_eigengenes[order(rownames(wgcna_metaprotomics_eigengenes)),]
+  wgcna_transcriptomics_Liver_eigengenes_New <- wgcna_transcriptomics_Liver_eigengenes_New[order(rownames(wgcna_transcriptomics_Liver_eigengenes_New)),]
+  same_order <- all(rownames(wgcna_metaprotomics_eigengenes) == rownames(wgcna_transcriptomics_Liver_eigengenes_New))
+  if(!same_order){
+    stop("Sample names do not match. Samples should be identical.", call. = F)
+  }
+} else{cat("Samples match")}
+
+
+#####
+p.value_matr <- corr.value_matr <- matrix(ncol = ncol(wgcna_metaprotomics_eigengenes), 
+                                          nrow = ncol(wgcna_transcriptomics_Liver_eigengenes_New), 
+                                          dimnames = list(colnames(wgcna_transcriptomics_Liver_eigengenes_New), 
+                                                          colnames(wgcna_metaprotomics_eigengenes)))
+
+
+for(i in 1:ncol(wgcna_transcriptomics_Liver_eigengenes_New)){
+  for(j in 1:ncol(wgcna_metaprotomics_eigengenes)){
+    cor.res <- cor.test(wgcna_transcriptomics_Liver_eigengenes_New[,i], wgcna_metaprotomics_eigengenes[,j])
+    p.value_matr[i, j] <- cor.res$p.value
+    corr.value_matr[i, j] <- cor.res$estimate
+  }
+}
+
+# Correct for number of tests
+p.value_matr.adjust <- p.adjust(p.value_matr, method = "fdr")
+dim(p.value_matr.adjust) <- dim(p.value_matr)
+dimnames(p.value_matr.adjust) <- list(colnames(wgcna_transcriptomics_Liver_eigengenes_New), colnames(wgcna_metaprotomics_eigengenes))
+
+# Add significance level.  
+# One star means a p-value of less than 0.05; Two stars is less than 0.01, and three, is less than 0.001.
+
+signif_matrix <- rep("", length(p.value_matr))
+three_star <- which( p.value_matr <= 0.001)
+signif_matrix[three_star] <- "***"
+two_star <- which((p.value_matr <= 0.01) & (p.value_matr > 0.001))
+signif_matrix[two_star] <- "**"
+one_star <- which((p.value_matr <= 0.05) & (p.value_matr > 0.01))
+signif_matrix[one_star] <- "*"
+dim(signif_matrix) = dim(p.value_matr) # Give textMatrix the correct dimensions 
+
+# Collect all results into a list.
+Proteomics_corr_X <- list(p_value = p.value_matr, 
+                          p_value_adj = p.value_matr.adjust,
+                          signif_matrix = signif_matrix,
+                          correlation = corr.value_matr)
+#rm(p.value_matr, p.value_matr.adjust, signif_matrix, corr.value_matr)
+
+heatmap_colors <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 6, name ="RdBu")))(51)
+
+wgcna_metaprotomics$hubs %>% 
+  as.data.frame() %>% 
+  dplyr::rename("Proteomics_name" = ".") %>%
+  tibble::rownames_to_column(var = "Module") -> hubProteomics
+
+hubProteomics -> hubProteomics_Before
+
+hubProteomics_Before$ModuleProteomics <- paste0("ME" ,hubProteomics_Before$Module)
+test <- Proteomics_corr_X$correlation
+hubProteomics_Before$Proteomics_name <- sub("XP_.*", "", hubProteomics_Before$Proteomics_name)
+hubProteomics_Before$Proteomics_name <- sub("NP_.*", "", hubProteomics_Before$Proteomics_name)
+hubProteomics_Before$Proteomics_name <- replace(hubProteomics_Before$Proteomics_name, hubProteomics_Before$Proteomics_name=="cytochrome.c.oxidase.subunit.5B..mitochondrial", "Cytochrome c oxidase subunit 5B, mitochondrial")
+hubProteomics_Before$Proteomics_name <- replace(hubProteomics_Before$Proteomics_name, hubProteomics_Before$Proteomics_name=="myosin.7.like.isoform.X1", "myosin-7 isoform X1")
+hubProteomics_Before$Proteomics_name <- replace(hubProteomics_Before$Proteomics_name, hubProteomics_Before$Proteomics_name=="creatine.kinase.S.type..mitochondrial", "Creatine kinase S-type, mitochondrial")
+hubProteomics_Before$Proteomics_name <- replace(hubProteomics_Before$Proteomics_name, hubProteomics_Before$Proteomics_name=="X3.hydroxyisobutyrate.dehydrogenase..mitochondrial", "3-hydroxyisobutyrate dehydrogenase, mitochondrial")
+hubProteomics_Before$Proteomics_name <- replace(hubProteomics_Before$Proteomics_name, hubProteomics_Before$Proteomics_name=="LOW.QUALITY.PROTEIN..zonadhesin.like", "Zonadhesin like")
+hubProteomics_Before$Proteomics_name <- replace(hubProteomics_Before$Proteomics_name, hubProteomics_Before$Proteomics_name=="cytosolic.non.specific.dipeptidase", "Cytosol nonspecific dipeptidas")
+hubProteomics_Before$Proteomics_name <- replace(hubProteomics_Before$Proteomics_name, hubProteomics_Before$Proteomics_name=="protocadherin.Fat.4", "Protocadherin Fat 4")
+hubProteomics_Before$Proteomics_name <- replace(hubProteomics_Before$Proteomics_name, hubProteomics_Before$Proteomics_name=="cadherin.17.precursor", "Cadherins 17 precursor")
+hubProteomics_Before$Proteomics_name <- replace(hubProteomics_Before$Proteomics_name, hubProteomics_Before$Proteomics_name=="sushi.domain.containing.protein.2.isoform.X2", "Sushi domain-containing protein 2")
+hubProteomics_Before$Proteomics_name <- replace(hubProteomics_Before$Proteomics_name, hubProteomics_Before$Proteomics_name=="intestinal.type.alkaline.phosphatase", "Intestinal-type alkaline phosphatase")
+
+#match(hubProteomics_Before[, "ModuleProteomics"], colnames(test))
+colnames(test)[match(hubProteomics_Before[,"ModuleProteomics"], colnames(test))] = hubProteomics_Before[,"Proteomics_name"]
+Proteomics_corr_X$correlation <- test
+```
+
+### MetaProteomics heatmap
+```{r, warning=FALSE, message=FALSE, error=FALSE, fig.height=10}
+pheatmap::pheatmap(Proteomics_corr_X$correlation, 
+                   color = heatmap_colors, 
+                   treeheight_col = 0, 
+                   treeheight_row = 0,  # will be shown on the transcriptomics ME heatmap
+                   cluster_rows = X_ME_dendro,
+                   cutree_rows = row_cut,
+                   display_numbers = Proteomics_corr_X$signif_matrix, 
+                   fontsize_number = 8, #10
+                   breaks = seq(from = -1, to = 1, length.out = 51), 
+                   silent = F,
+                   show_rownames = F,
+                   legend = F,
+                   labels_row = paste0(prefix_OTUs, rownames(Proteomics_corr_X$correlation)),
+                   labels_col = paste0(colnames(Proteomics_corr_X$correlation)),
+                   main = paste("Eigen\n", "Meta-proteins" )
+) -> Proteomics_corr_X_plot
+```
+
+
+
+
+```{r, warning=FALSE, message=FALSE, eval=FALSE, eval=FALSE}
+MEs = moduleEigengenes(Proteomics_host, moduleLabels1)$eigengenes
+
+MEs <- orderMEs(MEs)
+module_order = names(MEs) %>% gsub("ME","", .)
+MEs0 <- MEs
+MEs0$Sample.ID = row.names(MEs)
+
+mME = MEs0 %>%
+  pivot_longer(-Sample.ID) %>%
+  mutate(
+    name = gsub("ME", "", name),
+    name = factor(name, levels = module_order)
+  )
+
+library(tidyverse)
+setwd("/Users/shashankgupta/Desktop/ImprovAFish/ImprovAFish")
+sample_info3 <- read.csv("sample_info.csv", row.names = 1)
+sample_info3$Sample.ID <- sample_info3$ID_New
+mME_meta <- merge(mME, sample_info3, by = "Sample.ID") 
+colnames(mME_meta)[2] <-"Module"
+
+mME_meta$New_Diet <- factor(mME_meta$New_Diet, levels = c("CTR", "MC1", "MC2", "MN3"))
+mME_meta$Module <- factor(mME_meta$Module, levels = c("0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
+                                                      "10", "11", "12", "13", "14", "15", "16", "17",
+                                                      "18", "19", "20","21","22","23", "24"))
+expression_plots<-mME_meta%>%
+  #  group_by(Module) %>%
+  ggplot(aes(x=Time, y=value, fill=New_Diet)) +
+  facet_wrap(~ Module)+
+  ylab("Mean Module Eigenegene Value") +
+  geom_hline(yintercept = 0, linetype="dashed", color = "grey")+
+  geom_boxplot(width=.5, outlier.shape= NA, position = position_dodge(width = 0.5), alpha = 0.7) +
+  stat_summary(fun=mean, geom="line", aes(New_Diet=New_Diet, color = New_Diet), position = position_dodge(width = 0.5))  + 
+  geom_point(pch = 21, position = position_dodge(width = 0.5)) +
+  scale_fill_manual(name="Lifestage", values=c("#8C510A", "#DFC27D","#80CDC1", "#003C30", "#BA55D3")) +
+  scale_color_manual(name="Lifestage", values=c("#8C510A", "#DFC27D","#80CDC1", "#003C30", "#BA55D3")) + 
+  #xlab("Hours Post-Fertilization") + #Axis titles
+  theme_bw() + theme(panel.border = element_rect(color="black", fill=NA, size=0.75), panel.grid.major = element_blank(), #Makes background theme white
+                     panel.grid.minor = element_blank(), axis.line = element_blank()) +
+  theme(axis.text = element_text(size = 11 , color = "black"),
+        axis.title = element_text(size = 16, color = "black"), 
+        axis.text.x = element_text(size=11, color="black"), 
+        legend.title=element_blank(), 
+        legend.text=element_text(color="black", size=12)); expression_plots
+
+
+```
+
+
+
+# Step 8. Metabolomics
+### HILIC
+```{r, warning=FALSE, message=FALSE}
+rownames(wgcna_metabolomics_HILIC$modules$MEs) <- gsub("-MC1-TK1-", "_mc1_tk1_", rownames(wgcna_metabolomics_HILIC$modules$MEs))
+# Remove ME0 from analysis
+idx <- which(colnames(wgcna_metabolomics_HILIC$modules$MEs) == "ME0")
+wgcna_metabolomics_HILIC$modules$MEs <- wgcna_metabolomics_HILIC$modules$MEs[,-idx]
+if(take_average){
+  wgcna_metabolomics_HILIC$modules$MEs %>% 
+    rownames_to_column(var = "common") %>% 
+    mutate(common = sub("_VFA.*", "", common)) %>% 
+    group_by(common) %>% 
+    summarise_all(list(mean)) %>% 
+    ungroup() -> wgcna_metabolomics_HILIC_eigengenes
+  
+  wgcna_metabolomics_HILIC_eigengenes <- as.data.frame(wgcna_metabolomics_HILIC_eigengenes)
+}
+wgcna_metabolomics_HILIC_eigengenes$common <- gsub("mc1", "MC1", wgcna_metabolomics_HILIC_eigengenes$common)
+wgcna_metabolomics_HILIC_eigengenes$common <- gsub("mc2", "MC2", wgcna_metabolomics_HILIC_eigengenes$common)
+wgcna_metabolomics_HILIC_eigengenes$common <- gsub("mn3", "MN3", wgcna_metabolomics_HILIC_eigengenes$common)
+wgcna_metabolomics_HILIC_eigengenes$common <- gsub("ctr", "CTR", wgcna_metabolomics_HILIC_eigengenes$common)
+rownames(wgcna_metabolomics_HILIC_eigengenes) <- wgcna_metabolomics_HILIC_eigengenes$common
+wgcna_metabolomics_HILIC_eigengenes$common <- NULL
+
+dim(wgcna_metabolomics_HILIC_eigengenes); dim(wgcna_transcriptomics_Liver_eigengenes)
+```
+
+
+```{r, warning=FALSE, message=FALSE}
+table(rownames(wgcna_transcriptomics_Liver_eigengenes) %in% rownames(wgcna_metabolomics_HILIC_eigengenes))
+wgcna_transcriptomics_Liver_eigengenes_New <- wgcna_transcriptomics_Liver_eigengenes[rownames(wgcna_transcriptomics_Liver_eigengenes) %in% rownames(wgcna_metabolomics_HILIC_eigengenes), ]
+table( rownames(wgcna_transcriptomics_Liver_eigengenes_New) %in% rownames(wgcna_metabolomics_HILIC_eigengenes))
+
+# Check that the samples are in the same order. 
+# If they are not in order, change their order to match; If they do not match one-to-one, call an error.
+same_order <- all(rownames(wgcna_metabolomics_HILIC_eigengenes) == rownames(wgcna_transcriptomics_Liver_eigengenes_New))
+if(!same_order){
+  wgcna_metabolomics_HILIC_eigengenes <- wgcna_metabolomics_HILIC_eigengenes[order(rownames(wgcna_metabolomics_HILIC_eigengenes)),]
+  wgcna_transcriptomics_Liver_eigengenes_New <- wgcna_transcriptomics_Liver_eigengenes_New[order(rownames(wgcna_transcriptomics_Liver_eigengenes_New)),]
+  same_order <- all(rownames(wgcna_metabolomics_HILIC_eigengenes) == rownames(wgcna_transcriptomics_Liver_eigengenes_New))
+  if(!same_order){
+    stop("Sample names do not match. Samples should be identical.", call. = F)
+  }
+} else{cat("Samples match")}
+
+
+#####
+p.value_matr <- corr.value_matr <- matrix(ncol = ncol(wgcna_metabolomics_HILIC_eigengenes), 
+                                          nrow = ncol(wgcna_transcriptomics_Liver_eigengenes_New), 
+                                          dimnames = list(colnames(wgcna_transcriptomics_Liver_eigengenes_New), 
+                                                          colnames(wgcna_metabolomics_HILIC_eigengenes)))
+
+
+for(i in 1:ncol(wgcna_transcriptomics_Liver_eigengenes_New)){
+  for(j in 1:ncol(wgcna_metabolomics_HILIC_eigengenes)){
+    cor.res <- cor.test(wgcna_transcriptomics_Liver_eigengenes_New[,i], wgcna_metabolomics_HILIC_eigengenes[,j])
+    p.value_matr[i, j] <- cor.res$p.value
+    corr.value_matr[i, j] <- cor.res$estimate
+  }
+}
+
+# Correct for number of tests
+p.value_matr.adjust <- p.adjust(p.value_matr, method = "fdr")
+dim(p.value_matr.adjust) <- dim(p.value_matr)
+dimnames(p.value_matr.adjust) <- list(colnames(wgcna_transcriptomics_Liver_eigengenes_New), colnames(wgcna_metabolomics_HILIC_eigengenes))
+
+
+# Add significance level.  
+# One star means a p-value of less than 0.05; Two stars is less than 0.01, and three, is less than 0.001.
+signif_matrix <- rep("", length(p.value_matr))
+three_star <- which( p.value_matr <= 0.001)
+signif_matrix[three_star] <- "***"
+two_star <- which((p.value_matr <= 0.01) & (p.value_matr > 0.001))
+signif_matrix[two_star] <- "**"
+one_star <- which((p.value_matr <= 0.05) & (p.value_matr > 0.01))
+signif_matrix[one_star] <- "*"
+dim(signif_matrix) = dim(p.value_matr) # Give textMatrix the correct dimensions 
+
+# Collect all results into a list.
+Metabolites_1_corr_X <- list(p_value = p.value_matr, 
+                             p_value_adj = p.value_matr.adjust,
+                             signif_matrix = signif_matrix,
+                             correlation = corr.value_matr)
+rm(p.value_matr, p.value_matr.adjust, signif_matrix, corr.value_matr)
+heatmap_colors <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 6, name ="RdBu")))(51)
+wgcna_metabolomics_HILIC$hubs %>% 
+  as.data.frame() %>% 
+  dplyr::rename("metabolites_HILIC_name" = ".") %>%
+  tibble::rownames_to_column(var = "Module") -> hubmetabolites_HILIC
+
+hubmetabolites_HILIC -> hubmetabolites_HILIC_Before
+
+hubmetabolites_HILIC_Before$Modulemetabolites_HILIC <- paste0("ME" ,hubmetabolites_HILIC_Before$Module)
+
+
+test <- Metabolites_1_corr_X$correlation
+#hubmetabolites_HILIC_Before$metabolites_HILIC_name <- replace(hubmetabolites_HILIC_Before$metabolites_HILIC_name, hubmetabolites_HILIC_Before$metabolites_HILIC_name=="Ile.Leu...244.17825.Da.264.70.s", "Ile-Leu")
+#hubmetabolites_HILIC_Before$metabolites_HILIC_name <- replace(hubmetabolites_HILIC_Before$metabolites_HILIC_name, hubmetabolites_HILIC_Before$metabolites_HILIC_name=="Di.N.octyl.phthalate...390.27623.Da.707.55.s", "Di-N-octylphthalate")
+hubmetabolites_HILIC_Before$metabolites_HILIC_name <- replace(hubmetabolites_HILIC_Before$metabolites_HILIC_name, hubmetabolites_HILIC_Before$metabolites_HILIC_name=="Asp.Asp_248.06507Da665.09s", "Asp-Asp")
+hubmetabolites_HILIC_Before$metabolites_HILIC_name <- replace(hubmetabolites_HILIC_Before$metabolites_HILIC_name, hubmetabolites_HILIC_Before$metabolites_HILIC_name=="Glu.Thr_248.10146Da623.48s", "Glu-Thr")
+#colnames(test)[1:2] <- c("D-Arabinonic acid", "Thr-Thr")
+
+match(hubmetabolites_HILIC_Before[, "Modulemetabolites_HILIC"], colnames(test))
+colnames(test)[match(hubmetabolites_HILIC_Before[,"Modulemetabolites_HILIC"], colnames(test))] = hubmetabolites_HILIC_Before[,"metabolites_HILIC_name"]
+
+Metabolites_1_corr_X$correlation <- test
+
+pheatmap::pheatmap(Metabolites_1_corr_X$correlation, 
+                   color = heatmap_colors, 
+                   treeheight_col = 0, 
+                   treeheight_row = 0,  # will be shown on the transcriptomics ME heatmap
+                   cluster_rows = X_ME_dendro,
+                   cutree_rows = row_cut,
+                   display_numbers = Metabolites_1_corr_X$signif_matrix, 
+                   fontsize_number = 8, #10
+                   breaks = seq(from = -1, to = 1, length.out = 51), 
+                   silent = F,
+                   legend = F,
+                   show_rownames = F,
+                   labels_row = paste0(prefix_OTUs, rownames(Metabolites_1_corr_X$correlation)),
+                   labels_col = paste0(colnames(Metabolites_1_corr_X$correlation)),
+                   #main = "Eigen metabolites_HILIC"
+) -> Metabolites_1_corr_X_plot
+```
+
+
+### RP
+```{r, warning=FALSE, message=FALSE,fig.height=8 }
+rownames(wgcna_metabolomics_RP$modules$MEs) <- gsub("-MC1-TK1-", "_mc1_tk1_", rownames(wgcna_metabolomics_RP$modules$MEs))
+# Remove ME0 from analysis
+idx <- which(colnames(wgcna_metabolomics_RP$modules$MEs) == "ME0")
+wgcna_metabolomics_RP$modules$MEs <- wgcna_metabolomics_RP$modules$MEs[,-idx]
+if(take_average){
+  wgcna_metabolomics_RP$modules$MEs %>% 
+    rownames_to_column(var = "common") %>% 
+    mutate(common = sub("_VFA.*", "", common)) %>% 
+    group_by(common) %>% 
+    summarise_all(list(mean)) %>% 
+    ungroup() -> wgcna_metabolomics_RP_eigengenes
+  
+  wgcna_metabolomics_RP_eigengenes <- as.data.frame(wgcna_metabolomics_RP_eigengenes)
+}
+
+wgcna_metabolomics_RP_eigengenes$common <- gsub("mc1", "MC1", wgcna_metabolomics_RP_eigengenes$common)
+wgcna_metabolomics_RP_eigengenes$common <- gsub("mc2", "MC2", wgcna_metabolomics_RP_eigengenes$common)
+wgcna_metabolomics_RP_eigengenes$common <- gsub("mn3", "MN3", wgcna_metabolomics_RP_eigengenes$common)
+wgcna_metabolomics_RP_eigengenes$common <- gsub("ctr", "CTR", wgcna_metabolomics_RP_eigengenes$common)
+rownames(wgcna_metabolomics_RP_eigengenes) <- wgcna_metabolomics_RP_eigengenes$common
+wgcna_metabolomics_RP_eigengenes$common <- NULL
+
+dim(wgcna_metabolomics_RP_eigengenes); dim(wgcna_transcriptomics_Liver_eigengenes)
+```
+
+
+```{r, warning=FALSE, message=FALSE}
+table(rownames(wgcna_transcriptomics_Liver_eigengenes) %in% rownames(wgcna_metabolomics_RP_eigengenes))
+wgcna_transcriptomics_Liver_eigengenes_New <- wgcna_transcriptomics_Liver_eigengenes[rownames(wgcna_transcriptomics_Liver_eigengenes) %in% rownames(wgcna_metabolomics_RP_eigengenes), ]
+table( rownames(wgcna_transcriptomics_Liver_eigengenes_New) %in% rownames(wgcna_metabolomics_RP_eigengenes))
+
+# Check that the samples are in the same order. 
+# If they are not in order, change their order to match; If they do not match one-to-one, call an error.
+same_order <- all(rownames(wgcna_metabolomics_RP_eigengenes) == rownames(wgcna_transcriptomics_Liver_eigengenes_New))
+if(!same_order){
+  wgcna_metabolomics_RP_eigengenes <- wgcna_metabolomics_RP_eigengenes[order(rownames(wgcna_metabolomics_RP_eigengenes)),]
+  wgcna_transcriptomics_Liver_eigengenes_New <- wgcna_transcriptomics_Liver_eigengenes_New[order(rownames(wgcna_transcriptomics_Liver_eigengenes_New)),]
+  same_order <- all(rownames(wgcna_metabolomics_RP_eigengenes) == rownames(wgcna_transcriptomics_Liver_eigengenes_New))
+  if(!same_order){
+    stop("Sample names do not match. Samples should be identical.", call. = F)
+  }
+} else{cat("Samples match")}
+
+
+#####
+p.value_matr <- corr.value_matr <- matrix(ncol = ncol(wgcna_metabolomics_RP_eigengenes), 
+                                          nrow = ncol(wgcna_transcriptomics_Liver_eigengenes_New), 
+                                          dimnames = list(colnames(wgcna_transcriptomics_Liver_eigengenes_New), 
+                                                          colnames(wgcna_metabolomics_RP_eigengenes)))
+
+
+for(i in 1:ncol(wgcna_transcriptomics_Liver_eigengenes_New)){
+  for(j in 1:ncol(wgcna_metabolomics_RP_eigengenes)){
+    cor.res <- cor.test(wgcna_transcriptomics_Liver_eigengenes_New[,i], wgcna_metabolomics_RP_eigengenes[,j])
+    p.value_matr[i, j] <- cor.res$p.value
+    corr.value_matr[i, j] <- cor.res$estimate
+  }
+}
+
+# Correct for number of tests
+p.value_matr.adjust <- p.adjust(p.value_matr, method = "fdr")
+dim(p.value_matr.adjust) <- dim(p.value_matr)
+dimnames(p.value_matr.adjust) <- list(colnames(wgcna_transcriptomics_Liver_eigengenes_New), colnames(wgcna_metabolomics_RP_eigengenes))
+
+
+# Add significance level.  
+# One star means a p-value of less than 0.05; Two stars is less than 0.01, and three, is less than 0.001.
+signif_matrix <- rep("", length(p.value_matr))
+three_star <- which( p.value_matr <= 0.001)
+signif_matrix[three_star] <- "***"
+two_star <- which((p.value_matr <= 0.01) & (p.value_matr > 0.001))
+signif_matrix[two_star] <- "**"
+one_star <- which((p.value_matr <= 0.05) & (p.value_matr > 0.01))
+signif_matrix[one_star] <- "*"
+dim(signif_matrix) = dim(p.value_matr) # Give textMatrix the correct dimensions 
+
+# Collect all results into a list.
+Metabolites_2_corr_X <- list(p_value = p.value_matr, 
+                             p_value_adj = p.value_matr.adjust,
+                             signif_matrix = signif_matrix,
+                             correlation = corr.value_matr)
+rm(p.value_matr, p.value_matr.adjust, signif_matrix, corr.value_matr)
+heatmap_colors <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 6, name ="RdBu")))(51)
+wgcna_metabolomics_RP$hubs %>% 
+  as.data.frame() %>% 
+  dplyr::rename("metabolites_RP_name" = ".") %>%
+  tibble::rownames_to_column(var = "Module") -> hubmetabolites_RP
+
+hubmetabolites_RP -> hubmetabolites_RP_Before
+
+hubmetabolites_RP_Before$Modulemetabolites_RP <- paste0("ME" ,hubmetabolites_RP_Before$Module)
+
+
+test <- Metabolites_2_corr_X$correlation
+hubmetabolites_RP_Before$metabolites_RP_name <- replace(hubmetabolites_RP_Before$metabolites_RP_name, hubmetabolites_RP_Before$metabolites_RP_name=="Ile.Leu...244.17825.Da.264.70.s", "Ile-Leu")
+hubmetabolites_RP_Before$metabolites_RP_name <- replace(hubmetabolites_RP_Before$metabolites_RP_name, hubmetabolites_RP_Before$metabolites_RP_name=="Di.N.octyl.phthalate...390.27623.Da.707.55.s", "Di-N-octylphthalate")
+hubmetabolites_RP_Before$metabolites_RP_name <- replace(hubmetabolites_RP_Before$metabolites_RP_name, hubmetabolites_RP_Before$metabolites_RP_name=="X2_.Deoxyadenosine...251.10146.Da.111.43.s", "2-Deoxyadenosine")
+
+match(hubmetabolites_RP_Before[, "Modulemetabolites_RP"], colnames(test))
+colnames(test)[match(hubmetabolites_RP_Before[,"Modulemetabolites_RP"], colnames(test))] = hubmetabolites_RP_Before[,"metabolites_RP_name"]
+
+Metabolites_2_corr_X$correlation <- test
+```
+
+
+```{r, warning=FALSE, message=FALSE}
+pheatmap::pheatmap(Metabolites_2_corr_X$correlation, 
+                   color = heatmap_colors, 
+                   treeheight_col = 0, 
+                   treeheight_row = 0,  # will be shown on the transcriptomics ME heatmap
+                   cluster_rows = X_ME_dendro,
+                   cutree_rows = row_cut,
+                   display_numbers = Metabolites_2_corr_X$signif_matrix, 
+                   fontsize_number = 8, #10
+                   breaks = seq(from = -1, to = 1, length.out = 51), 
+                   silent = F,
+                   legend = F,
+                   show_rownames = F,
+                   labels_row = paste0(prefix_OTUs, rownames(Metabolites_2_corr_X$correlation)),
+                   labels_col = paste0(colnames(Metabolites_2_corr_X$correlation)),
+                   main = paste("Eigen\n", "Metabolites" )
+) -> Metabolites_2_corr_X_plot
+```
+
+
+### Lipidomics
+```{r, warning=FALSE, message=FALSE, fig.height=8}
+if(take_average){
+  wgcna_metabolomics_Lipidomics$modules$MEs %>% 
+    rownames_to_column(var = "common") %>% 
+    mutate(common = sub("_VFA.*", "", common)) %>% 
+    group_by(common) %>% 
+    summarise_all(list(mean)) %>% 
+    ungroup() -> wgcna_metabolomics_Lipidomics_eigengenes
+    wgcna_metabolomics_Lipidomics_eigengenes <- as.data.frame(wgcna_metabolomics_Lipidomics_eigengenes)
+}
+
+wgcna_metabolomics_Lipidomics_eigengenes$common <- gsub("mc1", "MC1", wgcna_metabolomics_Lipidomics_eigengenes$common)
+wgcna_metabolomics_Lipidomics_eigengenes$common <- gsub("mc2", "MC2", wgcna_metabolomics_Lipidomics_eigengenes$common)
+wgcna_metabolomics_Lipidomics_eigengenes$common <- gsub("mn3", "MN3", wgcna_metabolomics_Lipidomics_eigengenes$common)
+wgcna_metabolomics_Lipidomics_eigengenes$common <- gsub("ctr", "CTR", wgcna_metabolomics_Lipidomics_eigengenes$common)
+
+rownames(wgcna_metabolomics_Lipidomics_eigengenes) <- wgcna_metabolomics_Lipidomics_eigengenes$common
+wgcna_metabolomics_Lipidomics_eigengenes$common <- NULL
+
+dim(wgcna_metabolomics_Lipidomics_eigengenes); dim(wgcna_transcriptomics_Liver_eigengenes)
+
+```
+
+
+```{r, warning=FALSE, message=FALSE, fig.height=8}
+table(rownames(wgcna_transcriptomics_Liver_eigengenes) %in% rownames(wgcna_metabolomics_Lipidomics_eigengenes))
+wgcna_transcriptomics_Liver_eigengenes_New <- wgcna_transcriptomics_Liver_eigengenes[rownames(wgcna_transcriptomics_Liver_eigengenes) %in% rownames(wgcna_metabolomics_Lipidomics_eigengenes), ]
+
+table( rownames(wgcna_transcriptomics_Liver_eigengenes_New) %in% rownames(wgcna_metabolomics_Lipidomics_eigengenes))
+table( rownames(wgcna_transcriptomics_Liver_eigengenes_New) == rownames(wgcna_metabolomics_Lipidomics_eigengenes))
+
+
+
+#Correlate modules from transcriptomics and metagenomics.
+
+# Check that the samples are in the same order. 
+# If they are not in order, change their order to match; If they do not match one-to-one, call an error.
+same_order <- all(rownames(wgcna_metabolomics_Lipidomics_eigengenes) == rownames(wgcna_transcriptomics_Liver_eigengenes_New))
+if(!same_order){
+  wgcna_metabolomics_Lipidomics_eigengenes <- wgcna_metabolomics_Lipidomics_eigengenes[order(rownames(wgcna_metabolomics_Lipidomics_eigengenes)),]
+  wgcna_transcriptomics_Liver_eigengenes_New <- wgcna_transcriptomics_Liver_eigengenes_New[order(rownames(wgcna_transcriptomics_Liver_eigengenes_New)),]
+  same_order <- all(rownames(wgcna_metabolomics_Lipidomics_eigengenes) == rownames(wgcna_transcriptomics_Liver_eigengenes_New))
+  if(!same_order){
+    stop("Sample names do not match. Samples should be identical.", call. = F)
+  }
+} else{cat("Samples match")}
+
+
+#####
+p.value_matr <- corr.value_matr <- matrix(ncol = ncol(wgcna_metabolomics_Lipidomics_eigengenes), 
+                                          nrow = ncol(wgcna_transcriptomics_Liver_eigengenes_New), 
+                                          dimnames = list(colnames(wgcna_transcriptomics_Liver_eigengenes_New), 
+                                                          colnames(wgcna_metabolomics_Lipidomics_eigengenes)))
+
+
+for(i in 1:ncol(wgcna_transcriptomics_Liver_eigengenes_New)){
+  for(j in 1:ncol(wgcna_metabolomics_Lipidomics_eigengenes)){
+    cor.res <- cor.test(wgcna_transcriptomics_Liver_eigengenes_New[,i], wgcna_metabolomics_Lipidomics_eigengenes[,j])
+    p.value_matr[i, j] <- cor.res$p.value
+    corr.value_matr[i, j] <- cor.res$estimate
+  }
+}
+
+# Correct for number of tests
+p.value_matr.adjust <- p.adjust(p.value_matr, method = "fdr")
+dim(p.value_matr.adjust) <- dim(p.value_matr)
+dimnames(p.value_matr.adjust) <- list(colnames(wgcna_transcriptomics_Liver_eigengenes_New), colnames(wgcna_metabolomics_Lipidomics_eigengenes))
+
+
+# Add significance level.  
+# One star means a p-value of less than 0.05; Two stars is less than 0.01, and three, is less than 0.001.
+
+signif_matrix <- rep("", length(p.value_matr))
+three_star <- which( p.value_matr <= 0.001)
+signif_matrix[three_star] <- "***"
+two_star <- which((p.value_matr <= 0.01) & (p.value_matr > 0.001))
+signif_matrix[two_star] <- "**"
+one_star <- which((p.value_matr <= 0.05) & (p.value_matr > 0.01))
+signif_matrix[one_star] <- "*"
+dim(signif_matrix) = dim(p.value_matr) # Give textMatrix the correct dimensions 
+
+
+# Collect all results into a list.
+Lipidomics_corr_X <- list(p_value = p.value_matr, 
+                             p_value_adj = p.value_matr.adjust,
+                             signif_matrix = signif_matrix,
+                             correlation = corr.value_matr)
+rm(p.value_matr, p.value_matr.adjust, signif_matrix, corr.value_matr)
+
+
+
+heatmap_colors <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 6, name ="RdBu")))(51)
+
+
+wgcna_metabolomics_Lipidomics$hubs %>% 
+  as.data.frame() %>% 
+  dplyr::rename("Lipidomics_name" = ".") %>%
+  tibble::rownames_to_column(var = "Module") -> hubLipidomics
+
+hubLipidomics -> hubLipidomics_Before
+
+hubLipidomics_Before$ModuleLipidomics <- paste0("ME" ,hubLipidomics_Before$Module)
+
+
+test <- Lipidomics_corr_X$correlation
+hubLipidomics_Before$Lipidomics_name <- replace(hubLipidomics_Before$Lipidomics_name, hubLipidomics_Before$Lipidomics_name=="X1.Oleoyl.sn.glycero.3.phosphocholine", "1_Oleoyl_sn_glycero_3_phosphocholine")
+
+
+match(hubLipidomics_Before[, "ModuleLipidomics"], colnames(test))
+colnames(test)[match(hubLipidomics_Before[,"ModuleLipidomics"], colnames(test))] = hubLipidomics_Before[,"Lipidomics_name"]
+
+Lipidomics_corr_X$correlation <- test
+pheatmap::pheatmap(Lipidomics_corr_X$correlation, 
+                   color = heatmap_colors, 
+                   treeheight_col = 0, 
+                   treeheight_row = 0,  # will be shown on the transcriptomics ME heatmap
+                   cluster_rows = X_ME_dendro,
+                   cutree_rows = row_cut,
+                   display_numbers = Lipidomics_corr_X$signif_matrix, 
+                   fontsize_number = 8, #10
+                   breaks = seq(from = -1, to = 1, length.out = 51), 
+                   silent = F,
+                   show_rownames = F,
+                   labels_row = paste0(prefix_OTUs, rownames(Lipidomics_corr_X$correlation)),
+                   labels_col = paste0(colnames(Lipidomics_corr_X$correlation)),
+                   #main = "Eigen Lipidomics"
+                   ) -> Lipidomics_corr_X_plot
+
+```
+
+
+
+# Step 9. Integrated heatmap
+```{r, fig.align='center', fig.height=12, fig.width=20}
+cowplot::plot_grid(MT_plot$gtable,
+                   Z_corr_X_plot$gtable,
+                   X_plot$gtable,
+                   MetaTrans_corr_X_plot$gtable,
+                   Y_corr_X_plot$gtable,
+                   Proteomics_corr_X_plot$gtable,
+                   Metabolites_1_corr_X_plot$gtable,
+                   Metabolites_2_corr_X_plot$gtable,
+                   Lipidomics_corr_X_plot$gtable,
+                   ncol = 9,
+                   align = 'h',
+                   rel_widths = c(1.4, 0.6, 4.5, 1.2, 0.8, 1.5 , 0.3, 0.3, 0.3)) + 
+  ggplot2::theme(plot.margin = ggplot2::unit(c(8,3,7,2), "cm"))
+```
+
+
+
+```
+
+
+
+
+
+

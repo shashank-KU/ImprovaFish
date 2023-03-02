@@ -25,7 +25,7 @@ options(knitr.duplicate.label = 'allow')
 knitr::opts_chunk$set(warning = FALSE, message = FALSE, fig.align = "center") 
 ```
 
-# Step 1. Omics-Integration
+# Step 1. Omics-Integration: Gut
 ## Load packages
 ```{r}
 library("stringr")
@@ -57,13 +57,12 @@ filter.sig.mod <- 2
 ```{r}
 wgcna_metatranscriptomics <- readRDS("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/OmicsIntegration/stage2results_MetaTranscriptomics.rds")
 wgcna_transcriptomics <- readRDS("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/OmicsIntegration/stage2results_Transcriptomics.rds")
-wgcna_transcriptomics_Liver <- readRDS("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/OmicsIntegration/stage2results_Transcriptomics_Liver.rds")
 wgcna_metagenomics <- readRDS("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/OmicsIntegration/stage2results_Metagenomics.rds")
 wgcna_metabolomics_HILIC <- readRDS("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/OmicsIntegration/stage2results_HILIC.rds")
 wgcna_metabolomics_RP <- readRDS("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/OmicsIntegration/stage2results_RP.rds")
 wgcna_metabolomics_Lipidomics <- readRDS("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/OmicsIntegration/stage2results_Lipidomics.rds")
 wgcna_metaprotomics <- readRDS("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/OmicsIntegration/stage2results_Proteomics.rds")
-psdata <- readRDS("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/Input/psdata.rds")
+psdata <- readRDS("/Users/shashankgupta/Desktop/ImprovAFish/github/Input/psdata.rds")
 ```
 
 Function to remove and average modules
@@ -601,8 +600,8 @@ MetaTrans_corr_X <- list(p_value = p.value_matr,
 heatmap_colors <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 6, name ="RdBu")))(51)
 
 #Annotation for Eigen Metatranscriptomics
-meta_info <- read_tsv("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/MetaMetaTranscriptomics/Total.DRAM.STx.bac.k2.total.annotations.tsv")
-kraken_info <- read_tsv("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/MetaMetaTranscriptomics/Kraken2_result.tsv")
+meta_info <- read_tsv("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/MetaTranscriptomics/Total.DRAM.STx.bac.k2.total.annotations.tsv")
+kraken_info <- read_tsv("/Users/shashankgupta/Desktop/ImprovAFish/github/ImprovaFish/MetaTranscriptomics/Kraken2_result.tsv")
 rownames(meta_info) <- meta_info$...1
 wgcna_metatranscriptomics$hubs %>% 
   as.data.frame() %>% 
