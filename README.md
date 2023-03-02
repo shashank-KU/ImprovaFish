@@ -8,7 +8,7 @@
     - [Step 3. Transcriptomics](#step-3-Transcriptomics)
     - [Step 4. Metaproteomics](#step-4-metaproteomics)
     - [Step 5. Metabolomics](#step-5-metabolomics)
-    - [Step 6. Meta-metatranscriptomics](#step-6-meta-metatranscriptomics)
+    - [Step 6. Meta-transcriptomics](#step-6-meta-transcriptomics)
     - [Step 7.Omics-Integration](#step-7omics-integration)
 - [Bugs](#bugs)
 
