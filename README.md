@@ -88,7 +88,7 @@ For all the commands used for downstream analysis for [metaproteomics](https://s
 ### Step 5. Metabolomics
 For all the commands used for downstream analysis for metabolomics. For [Lipidomics](https://shashank-ku.github.io/ImprovaFish/Metabolomics/Step3_Lipidomics_WGCNA.html), [HILIC](https://shashank-ku.github.io/ImprovaFish/Metabolomics/Step3_Metabolites_1_WGCNA.html), [RP](https://shashank-ku.github.io/ImprovaFish/Metabolomics/Step3_Metabolites_2_WGCNA.html)
 
-### Step 6. Meta-metatranscriptomics
+### Step 6. Meta-transcriptomics
 For all the commands used for downstream analysis for [metatranscriptomics](https://shashank-ku.github.io/ImprovaFish/MetaTranscriptomics/Step4_Metatranscriptomics.html)
 
 ### Step 7.Omics-Integration
