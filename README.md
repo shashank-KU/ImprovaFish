@@ -39,7 +39,7 @@ Finally, to install a package from its official website, download the package so
 ```
 install.packages("path/to/reshape2_package.tar.gz", repos = NULL, type = "source")
 ```
-It is recommended to regularly update the installed packages to ensure compatibility and to benefit from new features and bug fixes. We require several packages-
+It is recommended to regularly update the installed packages to ensure compatibility and to benefit from new features and bug fixes. We require following packages-
 
 ```
 library("ranacapa")
@@ -65,6 +65,8 @@ library("metagenomeSeq")
 library("decontam")
 library("RColorBrewer")
 library("ampvis2")
+library("DT)
+library("png")
 ```
 
 ### Step 2. Metagenomics
