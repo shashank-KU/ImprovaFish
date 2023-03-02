@@ -9,7 +9,7 @@
     - [Step 4. Metaproteomics](#step-4-metaproteomics)
     - [Step 5. Metabolomics](#step-5-metabolomics)
     - [Step 6. Meta-transcriptomics](#step-6-meta-transcriptomics)
-    - [Step 7.Omics-Integration](#step-7omics-integration)
+    - [Step 7. Omics-Integration](#step-7-omics-integration)
 - [Bugs](#bugs)
 
 # Feed-microbiome-host interactions in Atlantic salmon over life stages
@@ -93,7 +93,7 @@ For all the commands used for downstream analysis for metabolomics. For [Lipidom
 ### Step 6. Meta-transcriptomics
 For all the commands used for downstream analysis for [metatranscriptomics](https://shashank-ku.github.io/ImprovaFish/MetaTranscriptomics/Step4_Metatranscriptomics.html)
 
-### Step 7.Omics-Integration
+### Step 7. Omics-Integration
 For all the commands used for downstream analysis for **gut** [omics-integration](https://shashank-ku.github.io/ImprovaFish/OmicsIntegration/OmicsIntegration_Gut.html)
 
 For all the commands used for downstream analysis for **liver** [omics-integration](https://shashank-ku.github.io/ImprovaFish/OmicsIntegration/OmicsIntegration_Liver.html)
