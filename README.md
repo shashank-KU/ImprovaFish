@@ -92,7 +92,7 @@ For all the commands used for downstream analysis for metabolomics. For [Lipidom
 For all the commands used for downstream analysis for [metatranscriptomics](https://shashank-ku.github.io/ImprovaFish/MetaTranscriptomics/Step4_Metatranscriptomics.html)
 
 ### Step 7.Omics-Integration
-For all the commands used for downstream analysis for **gut** [omics-integration](https://shashank-ku.github.io/ImprovaFish/OmicsIntegration/OmicsIntegration.html)
+For all the commands used for downstream analysis for **gut** [omics-integration](https://shashank-ku.github.io/ImprovaFish/OmicsIntegration/OmicsIntegration_Gut.html)
 
 For all the commands used for downstream analysis for **liver** [omics-integration](https://shashank-ku.github.io/ImprovaFish/OmicsIntegration/OmicsIntegration_Liver.html)
 
